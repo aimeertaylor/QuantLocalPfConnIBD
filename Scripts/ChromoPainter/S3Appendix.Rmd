@@ -1,0 +1,490 @@
+---
+title: "S3 Appendix"
+header-includes:
+- \usepackage{xfrac}
+- \usepackage{bm}
+- \usepackage{float}
+output: pdf_document
+dev: png
+bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
+---
+
+<!-- Change figure labels -->
+\makeatletter
+\renewcommand{\fnum@figure}{Fig S3.\thefigure}
+\makeatother
+
+
+```{r setup, include=FALSE}
+#==============================================================================
+# Default chunk options
+#==============================================================================
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, cache=TRUE, cache.comments = FALSE, fig.pos = 'H', fig.width = 6, dev = 'png', dpi = 300)
+```
+
+Throughout this document, pairs of clinics are denoted by their abbreviated names (MLA for Maela, WPA for Wang Pha, MKK for Mae Kon Ken and MKT for Mawker Thai).
+
+We estimated clinic-averaged co-ancestries from WGS data assuming SNPs were both linked and unlinked. Linked analyses require a recombination file, specifying distances between SNPs. We used a uniform recombination rate equal to $7.4 \times 10^{-7}$ Morgans per base pair [@Miles2016], the same as that specified in hmmIBD [@Schaffner2017]. ChromoPainter essentially treats each unlinked SNP as an independent segment [@Lawson2012], increasing the number sharable segments when SNPs are considered unlinked (Fig S3.\ref{fig: WGS}). Clinic-averaged co-ancestry estimates based on linked SNPs were more anisotropic than their unlinked counterparts (top versus bottom plot, Fig S3.\ref{fig: WGS}). Anisotropy had little impact upon downstream analyses, however, which were otherwise very similar for linked and unlinked estimates (Fig S3.\ref{fig:WGS trends}). 
+
+ChromoPainter was designed for dense WGS data [@Lawson2012], with typically 100,000 or more SNPs across the human genome (personal communication). Nevertheless, we tried to estimate clinic-averaged co-ancestries using barcode data. Unsurprisingly, the markers were too far separated to support a linked analysis. We therefore present results from an unlinked analysis of barcode data only. 
+
+ChromoPainter does not support missing data. We therefore imputed missing SNPs (both barcode and WGS) by sampling from a Bernoulli distribution with probability equal to the sample allele frequency at the locus corresponding to the missing SNP. 
+
+```{r WGS_results_readin}
+#===============================================================  
+# Set up 
+# ===============================================================  
+rm(list = ls())
+source("./Rfunctions/FinestructureLibrary.R") # adapted from fs-2.1.1
+require(fields) # for image.plot
+
+## make some colours
+some.colors<-MakeColorYRP() 
+some.colorsEnd<-MakeColorYRP(final=c(0.2,0.2,0.2)) 
+
+### Define our input files
+chunkfile_linked <-"./WGS_linked/stage2/WGS_linked_tmp_mainrun.linked_haploid_file1_ind1-178.chunkcounts.out" ## chunkcounts file
+chunkfile_unlinked <-"./WGS_unlinked/stage2/WGS_unlinked_tmp_mainrun.unlinked_haploid_file1_ind1-178.chunkcounts.out" ## chunkcounts file
+dataraw_linked <-as.matrix(read.table(chunkfile_linked,row.names=1,header=T)) # read in the pairwise chunk file 
+dataraw_unlinked <-as.matrix(read.table(chunkfile_unlinked,row.names=1,header=T)) # read in the pairwise chunk file 
+dataraw <- list(dataraw_linked, dataraw_unlinked)
+type <- c('linked', 'unlinked')
+
+# Read in site data
+load('../../RData/geo_dist_info.RData') # Site information
+attach(geo_dist_info, warn.conflicts = FALSE) 
+MetaData <- read.table('./WGS.ids', header = FALSE, as.is = TRUE)
+rownames(MetaData) <- MetaData$V1
+
+# Store samples by clinic from North to South
+sitelist <- vector('list', length = 4)
+sites <- c('MLA', 'WPA', 'MKK', 'MKT') 
+names(sitelist) <- sites
+for(site in sites){
+  site_ind <- site == MetaData$V2
+  sitelist[[site]] <- MetaData$V1[site_ind]
+}
+order <- unlist(sitelist)
+```
+
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: WGS} Clinic-averaged co-ancestry estimates based on WGS data."), fig.width=7, fig.height=9}
+#======================================================================== 
+# Plot clinic-averaged co-ancestry ordered from North to South
+par(mfrow = c(2,1), pty = 's', family = "serif", mar = c(3,3,3,3))
+#========================================================================   
+
+for(i in 1:2){
+  popmeanmatrix<-getPopMeanMatrix(dataraw[[i]][order,order],sitelist) 
+  tmatmax<-500 # cap the heatmap
+  tmpmat<-popmeanmatrix[rev(unlist(sitelist)), unlist(sitelist)]
+  tmpmat[tmpmat>tmatmax]<-tmatmax  
+  
+  # This is a rather hacky solution to the axis problem
+  image(1:dim(tmpmat)[2],1:dim(tmpmat)[1],t(tmpmat), xaxt="n",yaxt="n",xlab="",ylab="", col = 'white')
+  labelsatx = cumsum(sapply(sitelist, length)) - 0.5*sapply(sitelist, length)
+  labelsaty = 178-cumsum(sapply(sitelist, length)) + 0.5*sapply(sitelist, length)
+  axis(side=3,at=labelsatx,labels=names(sitelist),cex.axis=1, las = 2)
+  axis(side=2,at=labelsaty,labels=names(sitelist),las=2,cex.axis=1) 
+  mtext(line = 1, text = c('Recipient', 'Donor'), side = c(2,3), adj = c(0.65, 0.35))
+  mtext(line = 0.5, side = 1, text = type[i])
+  title(main = LETTERS[1:2][i],adj = 0, cex.main = 1.5, line = 0.5)
+  image.plot(1:dim(tmpmat)[2],1:dim(tmpmat)[1], t(tmpmat), xaxt = 'n', yaxt = 'n', add = TRUE)
+}
+```
+
+
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig:WGS trends}Trends and correlates of clinic-averaged co-ancestry estimates based on WGS data. P-values are two-tailed Monte Carlo estimates based on 1000 permutations of the clinic-averaged co-ancestries."), fig.width=7, fig.height=9}
+#====================================================================================   
+# Plot clinic-averaged co-ancestry against distance and propotion IBD based estimates
+# (explored scaling by number of comparisons but over-complicates vizualization)
+#====================================================================================   
+load('../../RData/WGS_proportions.RData')
+sig3 <- function(x){formatC(signif(x,3), format='e', digits=2)} # Format scientific
+fmt3 <- function(x){formatC(round(x, 3), format='f', digits=3)} # Format trailing zeros
+source('../../FunctionFiles/simtests.R')
+par(mfcol = c(3,2), pty = 'm', family = "serif", mar = c(5,5,3,3))
+cols = c(MKK_WPA = 'blue', # blue when donation southwards 
+         MKT_MKK = 'blue', 
+         WPA_MLA = 'blue', 
+         MKT_WPA = 'blue', 
+         MKK_MLA = 'blue', 
+         MKT_MLA = 'blue', 
+         WPA_MKK = 'red', 
+         MKK_MKT = 'red', # red when donation northwards
+         MLA_WPA = 'red',
+         WPA_MKT = 'red', 
+         MLA_MKK = 'red',
+         MLA_MKT = 'red',
+         MLA_MLA = 'black', WPA_WPA = 'black', MKK_MKK = 'black', MKT_MKT = 'black') 
+cols <- apply(as.matrix(cols, ncol = 1), 1, adjustcolor, alpha.f = 0.5)
+southwards <- names(cols[cols == '#0000FF80']) # blue
+northwardspls <- names(cols[cols != '#0000FF80']) # blue
+
+for(i in 1:2){
+  
+  #----------------------------------------------------------
+  # Set up 
+  #----------------------------------------------------------
+  popmeanmatrix<-getPopMeanMatrix(dataraw[[i]][order,order],sitelist) 
+  tmpmat<-popmeanmatrix[rev(unlist(sitelist)), unlist(sitelist)]
+  
+  Xvalues <- pairwise_site_distance_all[names(cols)]
+  Yvalues <- pairwise_site_distance_all
+  Yvalues[] <- NA
+  
+  for(j in 1:length(pairwise_site_distance_all)){
+    comp <- names(pairwise_site_distance_all)[j]
+    site_pair <- strsplit(comp, split = "_")[[1]]
+    # in comp [1] is recipiant [2] is donor 
+    Yvalues[comp] <- tmpmat[sitelist[[site_pair[1]]][1], sitelist[[site_pair[2]]][1]]
+  }
+  
+  #----------------------------------------------------------
+  # Plot with distance
+  #----------------------------------------------------------
+  # plot northwards then southwards because red on blue != blue on red in R
+  plot(y = Yvalues[northwardspls], x = Xvalues[northwardspls], xlim = c(0,100), 
+       xlab = 'Distance (km)', ylab = sprintf('Clinic-averaged co-ancestry estimates (%s)', type[i]), 
+       bty = 'n', pch = 16, cex = 2, cex.axis =1,  
+       col = cols[northwardspls], las = 2)
+  points(y = Yvalues[southwards], x = Xvalues[southwards], 
+         col = cols[southwards], pch = 16, cex = 2)
+  title(main = LETTERS[1:2][i],adj = 0, cex.main = 2, line = 0)
+  
+  # Legend
+  legend('topright', col = unique(cols)[c(3,1,2)], bty = 'n', pch = 16, 
+         legend = c('Within-clinic donation', 'Donation southwards','Donation northwards'))
+  
+  # Annotate 
+  R <- permute.univlm(x = Xvalues, y = Yvalues)
+  text(x = 40, y =  quantile(Yvalues, prob = 0.95), 
+       labels = bquote(beta == .(sig3(R$obs)) ~ 'p-value' == .(fmt3(R$pvalue))))
+  
+  
+  #----------------------------------------------------------
+  # Plot agreement between co-ancestries and proportion IBD
+  # Within and across sites  
+  #----------------------------------------------------------
+  X <- proportion_results$proportion[,'ProbIBD_tail']
+  plot(x = X, 
+       y = Yvalues[northwardspls], 
+       bty = 'n', pch = 16, cex = 2, col = cols[northwardspls], 
+       xlab = expression('Proportion of parasite sample pairs with'~hat(pi)[IBD] > 0.5),
+       ylab = sprintf('Clinic-averaged co-ancestry estimates (%s)', type[i]))
+  points(y = Yvalues[southwards], x = X[1:6], 
+         col = cols[southwards], pch = 16, cex = 2)
+  title(main = LETTERS[3:4][i],adj = 0, cex.main = 1.5, line = 0)
+  
+  # Legend
+  legend('bottomright', col = unique(cols)[c(3,1,2)], bty = 'n', pch = 16, 
+         legend = c('Within-clinic donation', 'Donation southwards', 'Donation northwards'))
+  
+  # Correlation
+  R <- cor(y = Yvalues[1:12], x = c(X[1:6],X[1:6]))
+  # Annotate
+  text(y = quantile(Yvalues[1:12], prob = 0.95), x = 0.05, label = bquote(r == .(round(R,3))))
+  
+  
+  #----------------------------------------------------------
+  # Plot agreement between co-ancestries and proportion IBD
+  # Across sites only   
+  #----------------------------------------------------------
+  plot(x = X[1:6], 
+       y = Yvalues[northwardspls][1:6], bty = 'n', pch = 16, cex = 2, 
+       col = cols[northwardspls][1:6], 
+       xlab = expression('Proportion of parasite sample pairs with'~hat(pi)[IBD] > 0.5),
+       ylab = sprintf('Clinic-averaged co-ancestry estimates (%s)', type[i]))
+  points(y = Yvalues[southwards], x = X[1:6], 
+         col = cols[southwards], pch = 16, cex = 2)
+  title(main = LETTERS[5:6][i],adj = 0, cex.main = 1.5, line = -1)
+  
+  # Legend
+  legend('bottomright', col = unique(cols)[1:2], bty = 'n', pch = 16, 
+         legend = c('Donation southwards', 'Donation northwards'))
+  
+  # Correlation
+  R <- cor(y = Yvalues[1:12], x = c(X[1:6],X[1:6]))
+  # Annotate
+  text(y = quantile(Yvalues[1:12], prob = 0.95), x = 0.05, label = bquote(r == .(round(R,3))))
+}
+```
+
+```{r}
+#====================================================================================   
+# Plot pairwise co-ancestry and proportion IBD point estimates 
+#====================================================================================   
+# Load IBD results
+load('../../RData/WGS_threshold.RData')
+par(mfrow = c(1,2), pty = 's')
+for(i in 1:2){
+  
+  # Unpack the chromoPainter results
+  chromP_vector <- dataraw[[i]][lower.tri(dataraw[[i]])]
+  recipient <- NULL
+  donor <- NULL
+  for(j in 1:nrow(dataraw[[i]])){
+    rownames_per_col_j <- rownames(dataraw[[i]])[-(1:j)]
+    recipient <- c(recipient, rownames_per_col_j)
+    donor <- c(donor, rep(colnames(dataraw[[i]])[j], length(rownames_per_col_j)))
+  }
+  names(chromP_vector) <- paste(donor, recipient, sep = '_')
+  
+  # Plot correlation of chunk count with IBD
+  plot(x = WGS$ProbIBD, 
+       y = chromP_vector[WGS$Sample_comparison], 
+       bty = 'n', pch = 16, col = adjustcolor('black', alpha.f = 0.3), 
+       xlab = 'proportion IBD',
+       ylab = sprintf('Shared chunk count (%s)', type[i]))
+  abline(v = 0.5, lty = 'dotted') # Tail cut off
+  
+  # Correlation
+  R2 <- cor(x = WGS$ProbIBD, y = chromP_vector[WGS$Sample_comparison])
+  
+  # Annotate
+  text(x = 0.2, y = max(chromP_vector[WGS$Sample_comparison]), 
+       label = bquote(r == .(round(R2,3))))
+}
+```
+
+
+```{r Barcode_results_readin}
+#===============================================================  
+# Set up 
+#=============================================================== 
+rm(list = ls())
+source("./Rfunctions/FinestructureLibrary.R") # based on from fs-2.1.1
+source("../../FunctionFiles/simtests.R")
+require(fields)
+
+## make some colours
+some.colors<-MakeColorYRP() 
+some.colorsEnd<-MakeColorYRP(final=c(0.2,0.2,0.2)) 
+
+### Define our input files
+chunkfile<-"./Barcode_analysis_partialMon21Aug/Barcode_unlinked_hap.chunkcounts.out" ## chromopainter chunkcounts file
+dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=1)) # read in the pairwise chunk file 
+
+# Read in site data
+load('../../RData/geo_dist_info.RData') # Site information
+attach(geo_dist_info, warn.conflicts = FALSE) 
+MetaData <- read.table('./Barcode_analysis_partialMon21Aug/Barcode.ids', header = FALSE, as.is = TRUE)
+rownames(MetaData) <- MetaData$V1
+
+# Store samples by site from North to South
+sitelist <- vector('list', length = 4)
+sites <- c('MLA', 'WPA', 'MKK', 'MKT') # Order North to South 
+names(sitelist) <- sites
+for(site in sites){
+  site_ind <- site == MetaData$V2
+  sitelist[[site]] <- MetaData$V1[site_ind]
+}
+order <- unlist(sitelist)
+```
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: clinic-avaeraged co-ancestry barcode}Clinic-averaged co-ancestry estimates based on barcode data."), fig.width = 7, fig.height = 7}
+#========================================================================   
+# Plot pairwise coancestry ordered by clinic from North to South
+par(mfrow = c(1,1), pty = 's', family = "serif", mar = c(3,3,3,3))
+#========================================================================   
+popmeanmatrix<-getPopMeanMatrix(dataraw[order,order],sitelist) 
+tmatmax<-500 # cap the heatmap
+tmpmat<-popmeanmatrix[rev(unlist(sitelist)), unlist(sitelist)]
+tmpmat[tmpmat>tmatmax]<-tmatmax  
+null <- tmpmat
+null[]<-NA
+
+# This is a rather hacky solution to the axis problem
+image(1:dim(tmpmat)[2],1:dim(tmpmat)[1], null, zlim = c(0,1), 
+      xaxt="n",yaxt="n",xlab="",ylab="", col = 'white')
+labelsatx = cumsum(sapply(sitelist, length)) - 0.5*sapply(sitelist, length)
+labelsaty = 1173-cumsum(sapply(sitelist, length)) + 0.5*sapply(sitelist, length)
+axis(side=3,at=labelsatx,labels=names(sitelist),cex.axis=0.7)
+axis(side=2,at=labelsaty,labels=names(sitelist),las=2,cex.axis=0.7) 
+mtext(line = 1, text = c('Recipient', 'Donor'), side = c(2,3), adj = c(0.80, 0.2), cex = 0.7)
+mtext(line = 0.5, side = 1, text = 'unlinked')
+image.plot(1:dim(tmpmat)[2],1:dim(tmpmat)[1], t(tmpmat), xaxt = 'n', 
+           yaxt = 'n', add = TRUE, legend.width = 2)
+```
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: clinic-avaeraged co-ancestry barcode trends}Trends and correlates of clinic-averaged co-ancestry estimates based on barcode data. Trend estimates and p-values were based on within and northwards co-ancestries only, since north and southward estimates are practically identical. P-values are two-tailed. $\\hat{p}$ denotes a Monte Carlo estimate based on 1000 permutations of the clinic-averaged co-ancestries. $p$ denotes an exact p-value based on $6! = 720$ possible permutations."), fig.width=7, fig.height=7}
+#========================================================================   
+# Plot clinic-averaged co-ancestry ordered from North to South
+#========================================================================   
+sig3 <- function(x){formatC(signif(x,3), format='e', digits=2)} # Format scientific
+fmt3 <- function(x){formatC(round(x, 3), format='f', digits=3)} # Format trailing zeros
+par(mfcol = c(2,2), pty = 's', family = "serif", mar = c(5,5,2,2))
+
+cols = c(MKK_WPA = 'blue', # blue when donation southwards 
+         MKT_MKK = 'blue', 
+         WPA_MLA = 'blue',
+         MKT_WPA = 'blue', 
+         MKK_MLA = 'blue', 
+         MKT_MLA = 'blue', 
+         WPA_MKK = 'red', 
+         MKK_MKT = 'red', # red when donation northwards
+         MLA_WPA = 'red', 
+         WPA_MKT = 'red', 
+         MLA_MKK = 'red',
+         MLA_MKT = 'red',
+         MLA_MLA = 'black', WPA_WPA = 'black', MKK_MKK = 'black', MKT_MKT = 'black') 
+cols <- apply(as.matrix(cols, ncol = 1), 1, adjustcolor, alpha.f = 0.5)
+southwards <- names(cols[cols == '#0000FF80']) # blue
+northwardspls <- names(cols[cols != '#0000FF80']) # blue
+
+#----------------------------------------------------------
+# Set up 
+#----------------------------------------------------------
+# Clinic averaged regression
+Xvalues <- pairwise_site_distance_all[names(cols)]
+Yvalues <- pairwise_site_distance_all[names(cols)]
+Yvalues[] <- NA
+
+for(j in 1:length(pairwise_site_distance_all)){
+  comp <- names(pairwise_site_distance_all)[j]
+  site_pair <- strsplit(comp, split = "_")[[1]]
+  # in comp (recipiant is comp[1] <- donor is comp[2])
+  Yvalues[comp] <- tmpmat[sitelist[[site_pair[1]]][1], sitelist[[site_pair[2]]][1]]
+}
+
+#----------------------------------------------------------
+# Plot regression 1
+#----------------------------------------------------------
+# reoder Y s.t. plot S->N before N->S 
+# (because red on blue versus blue on red gives diff col)
+plot(y = Yvalues[northwardspls], x = Xvalues[northwardspls], xlim = c(0,100),  
+     xlab = 'Distance (km)', ylab = 'Clinic-averaged co-ancestry estimates (unlinked)', 
+     bty = 'n', pch = 16, cex = 2, cex.axis =1, 
+     col = cols[northwardspls])
+points(y = Yvalues[southwards], x = Xvalues[southwards], 
+       col = cols[southwards], pch = 16, cex = 2)
+title(main = 'A',adj = 0, cex.main = 1.5, line = 0)
+
+# Legend
+legend('topright', col = unique(cols)[c(3,1,2)], bty = 'n', pch = 16, 
+       legend = c('Within-clinic donation', 'Donation southwards','Donation northwards'))
+
+# Based on northwardspls only since northwards and southwards so similar
+R <- permute.univlm(y = Yvalues[northwardspls], x = Xvalues[northwardspls])
+text(x = 35, y =  quantile(Yvalues, prob = 0.95), 
+     labels = bquote(beta == .(sig3(R$obs)) ~ hat(p) == .(fmt3(R$pvalue))))
+
+#----------------------------------------------------------
+# Plot regression 2
+#----------------------------------------------------------
+# reoder Y s.t. plot N->S before S->N 
+# (because red on blue versus blue on red gives diff col)
+plot(y = Yvalues[northwardspls[1:6]], x = Xvalues[northwardspls[1:6]], xlim = c(0,100), 
+     xlab = 'Distance (km)', ylab = 'Clinic-averaged co-ancestry estimates (unlinked)', 
+     bty = 'n', pch = 16, cex = 2, cex.axis =1,  
+     col = cols[northwardspls[1:6]])
+points(y = Yvalues[southwards], x = Xvalues[southwards], 
+       col = cols[southwards], pch = 16, cex = 2)
+title(main = 'C',adj = 0, cex.main = 1.5, line = 0)
+
+# Annotate 
+R <- permute.univlm(x = Xvalues[1:6], y = Yvalues[1:6], nrep = 1000)
+text(x = 35, y =  quantile(Yvalues[-(13:16)], prob = 0.5), 
+     labels = bquote(beta == .(sig3(R$obs)) ~ p == .(fmt3(R$pvalue))))
+
+#----------------------------------------------------------
+# Plot agreement between co-ancestries and proportion IBD
+# Within and across sites  
+#----------------------------------------------------------
+load('../../RData/Barcode_proportions.RData')
+plot(x = proportion_results$proportion[,'ProbIBD_93_tail'], 
+     y = Yvalues[northwardspls], # Check order of x and y by printing names as column vectors
+     bty = 'n', pch = 16, cex = 2, col = cols[northwardspls], 
+     xlab = expression('Proportion of parasite sample pairs with'~hat(pi)[IBD] > 0.5),
+     ylab = 'Clinic-averaged co-ancestry estimates (unlinked)')
+points(x = proportion_results$proportion[1:6,'ProbIBD_93_tail'], 
+       y = Yvalues[southwards], col = cols[southwards], pch = 16, cex = 2)
+
+# Correlation
+R <- cor(y = Yvalues, x = c(proportion_results$proportion[1:6,'ProbIBD_93_tail'],
+                            proportion_results$proportion[,'ProbIBD_93_tail']))
+
+# Annotate
+text(y = 0.08, x = 0.002, label = bquote(r == .(round(R,3))))
+title(main = 'B',adj = 0, cex.main = 1.5, line = 0)
+
+#----------------------------------------------------------------------------
+# Plot agreement between clinic-averaged co-ancestries and proportion IBD
+#----------------------------------------------------------------------------
+plot(x = proportion_results$proportion[1:6,'ProbIBD_93_tail'], 
+     y = Yvalues[northwardspls[1:6]], # Check order of x and y by printing names as column vectors
+     bty = 'n', pch = 16, cex = 2, col = cols[northwardspls[1:6]], 
+     xlab = expression('Proportion of parasite sample pairs with'~hat(pi)[IBD] > 0.5),
+     ylab = 'Clinic-averaged co-ancestry estimates (unlinked)')
+points(x = proportion_results$proportion[1:6,'ProbIBD_93_tail'], 
+       y = Yvalues[southwards], col = cols[southwards], pch = 16, cex = 2)
+
+# Correlation
+R <- cor(y = Yvalues[1:12], x = c(proportion_results$proportion[1:6,'ProbIBD_93_tail'], 
+                                  proportion_results$proportion[1:6,'ProbIBD_93_tail']))
+# Annotate
+text(y = 0.07925, x = 0.0005, label = bquote(r == .(round(R,3))))
+title(main = 'D',adj = 0, cex.main = 1.5, line = 0)
+```
+
+
+```{r}
+#====================================================================================   
+# Extract pairwise co-ancestry and proportion IBD point estimates 
+#====================================================================================   
+# Load IBD results
+load('../../RData/Barcode_threshold.RData')
+
+# Unpack the chromoPainter results
+chromP_vector <- dataraw[lower.tri(dataraw)]
+recipient <- NULL
+donor <- NULL
+for(j in 1:nrow(dataraw)){
+  rownames_per_col_j <- rownames(dataraw)[-(1:j)]
+  recipient <- c(recipient, rownames_per_col_j)
+  donor <- c(donor, rep(colnames(dataraw)[j], length(rownames_per_col_j)))
+}
+names(chromP_vector) <- paste(donor, recipient, sep = '_')
+
+# Check order
+nas <- is.na(Barcode$ProbIBD_93)
+any(names(chromP_vector) != Barcode$Sample_comparison[!nas])
+X <- Barcode$ProbIBD_93[!nas]
+```
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: Pairwise barcode 01}Pairwise co-ancestry estimates and $\\hat{\\pi}_{\\text{IBD}}$ on zero-one axes."), fig.width=7, fig.height=9}
+par(mfrow = c(3,2), pty = 's', family = "serif", mar = c(5,5,2,2))
+for(site_comp in geo_order){
+  ind <- Barcode$Site_comparison[!nas] == site_comp
+  plot(x = X[ind], ylim = c(0, 1), xlim = c(0,1), 
+       y = chromP_vector[ind],
+       bty = 'n', pch = 16, col = adjustcolor('black', alpha.f = 0.3),
+       xlab = expression(hat(pi)[IBD]), 
+       main = paste(strsplit(site_comp, split = '_')[[1]], collapse = ' '),
+       ylab = 'Pairwise co-ancestry estimates')
+  abline(h = mean(chromP_vector[ind]), lty = 'dotted')
+}
+```
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: Pairwise barcode}Pairwise co-ancestry estimates and $\\hat{\\pi}_{\\text{IBD}}$."), fig.width=7, fig.height=9}
+par(mfrow = c(3,2), pty = 's', family = "serif", mar = c(5,5,2,2))
+for(site_comp in geo_order){
+  ind <- Barcode$Site_comparison[!nas] == site_comp
+  plot(x = X[ind], ylim = c(0.04, 0.18), 
+       y = chromP_vector[ind], 
+       bty = 'n', pch = 16, col = adjustcolor('black', alpha.f = 0.3),
+       xlab = expression(hat(pi)[IBD]), 
+       main = paste(strsplit(site_comp, split = '_')[[1]], collapse = ' '),
+       ylab = 'Pairwise co-ancestry estimates')
+  abline(h = mean(chromP_vector[ind]), lty = 'dotted')
+  
+  # Correlation and annotate
+  R <- cor(x = X[ind], y = chromP_vector[ind])
+  text(x = 0.2, y = max(chromP_vector[ind]), label = bquote(r == .(round(R,3))))
+}
+```
+
+\pagebreak
+
+# References

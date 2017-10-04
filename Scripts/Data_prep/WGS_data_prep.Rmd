@@ -1,0 +1,151 @@
+---
+title: "WGS data preparation"
+header-includes:
+- \usepackage{float}
+output: pdf_document
+bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
+---
+
+<!-- TO-DO: why are monomorphic all non-reference in the vcf, while some are reference in txt??? -->
+
+```{r setup, include=FALSE}
+# Default chunk options
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, cache=TRUE, cache.comments = FALSE, fig.pos = 'H', fig.width = 7)
+
+library(knitr) # For kable
+rm(list = ls())
+```
+
+```{r}
+# WGS.txt and Data_store_WGS.RData were created from from temp.recode.vcf via the files listed below. 
+# 
+# 1)	/T1_T2_T3_T4_samples/unziped/temp.recode.vcf
+# 2)	/aimeet/IBD/tem.recode.vcf 
+# 3)	/aimeet/IBD/new.vcf 
+# 4)	/aimeet/IBD/new_biallelic.recode.vcf
+# 5)	/aimeet/IBD/new_biallelic_poly.recode.vcf
+# 
+# See notes below and also /aimeet/IBD/Notes_9Nov16.txt
+```
+
+As in [@Cerqueira2016], reads were aligned to the *P. falciparum* 3D7 v3 reference genome, genotypes called and sites filtered. Sites removed included heterozygous sites, indels, sites with QUAL < 60, GQ < 30, polymorphic sites located in pericentromeric, subtelomeric and hypervariable regions, and sites occurring in genes belonging to large antigenic gene families. 
+
+<!-- Resulting file: -->
+<!-- /U19_Aim4/T1_T2_T3_T4_samples/unziped/temp.recode.vcf -->
+<!-- Which was copied here:  -->
+<!-- U19_Aim4/aimeet/IBD/tem.recode.vcf -->
+
+In addition to the filters described above, we removed
+121 sites with reference or alternative allele assignments indicating potential indels,
+<!-- Using awk 'length($4) == 1 || $1 ~ "#" {print $0}' temp.recode.vcf > new.vcf -->
+<!-- As recommended in email sent 11/4/16 (subject Slide Permission) -->
+<!-- Resulting file: /U19_Aim4/aimeet/IBD/new.vcf -->
+multi-allelic sites, 
+<!-- Resulting file: /U19_Aim4/aimeet/IBD/new_biallelic.recode.vcf -->
+<!-- see new_biallelic.log: "After filtering, kept 214720 out of a possible 226359 Sites" -->
+<!-- see new_biallelic_freq.frq: all N_ALLELES = 2 -->
+sites with no non-reference allele counts, 
+<!-- Resulting file: /U19_Aim4/aimeet/IBD/new_biallelic_poly.recode.vcf -->
+<!-- see new_biallelic_poly.log: "After filtering, kept 202687 out of a possible 214720 Sites" -->
+and sites lacking genotype calls in 20% or more of the isolates. 
+<!-- This step was performed by Steve Schaffner -->
+<!-- Resulting file: new_biallelic_poly.recode.txt -->
+
+From the ensuing text file, which contained a total of 42879 SNPs and 180 isolates, we removed mitochondrial and apicoplast SNPs (labelled chrom 15 and 16, respectively), monomorphic non-reference SNPs, and 2 isolates from Mae Ramat. 
+
+```{r, cache = FALSE, echo = FALSE} 
+# Load bialleleic sequencing and meta data
+SequencingData <- read.delim('../../RawData/new_biallelic_poly.recode.txt')
+MetaData <- read.table('../../RawData/groups.ready.time_geo_isolate.pca.txt', header = TRUE) # 
+Additional_metadata <- read.csv('../../RawData/clearance_rate.csv',nrows = 198)
+row.names(Additional_metadata) <- as.character(Additional_metadata$Sample_ID)
+load('../../RData/geo_dist_info.RData') # Site information (to calculate minority sample size per comp)
+attach(geo_dist_info, warn.conflicts = FALSE) 
+
+# Removing data from chr 15 (mitochondial) and 16 (apicoplast)
+table(SequencingData$chrom) # 14 SNPs on chr 15 and 1 on chr 16
+# dim(SequencingData) # 42879 182 before removal of mitochondrial and apicoplast 
+
+SequencingData <- t(SequencingData[SequencingData$chrom < 14,]) 
+# dim(SequencingData) # 182 37170 after removal of  mitochondrial and apicoplast  
+
+# Replace missing (-1) with NA (checked SNPpos)
+# any(SequencingData[1:2,] == -1) # Check no pos are -1 before replacing
+SequencingData[SequencingData == -1] <- NA
+
+# Rename sites the match barcode data 
+X <- as.character(MetaData$collection_location) # rename
+X[X == 'Maela'] <- 'MLA'
+X[X == 'WangPha'] <- 'WPA'
+X[X == 'MaeKonKen'] <- 'MKK'
+X[X == 'MawkerThai'] <- 'MKT'
+MetaData$collection_location <- X
+rownames(MetaData) <- as.character(MetaData$strain)
+MetaData <- MetaData[rownames(SequencingData)[-(1:2)], ] # Make sure MetaData in the same order as SNPData
+
+# Remove MaeRaMat
+MaeRaMat_ind <- MetaData$collection_location == "MaeRaMat"
+SequencingData <- SequencingData[c(T, T, !MaeRaMat_ind),]
+MetaData <- MetaData[!MaeRaMat_ind,]
+
+# Remove monomorphic non-reference (freq calculated after MaeRaMat)
+freq <- colMeans(SequencingData[-(1:2),], na.rm = TRUE)
+# sum(freq == 0) # 408
+# sum(freq == 1) # 1851
+monoind <- (freq == 0 | freq == 1) 
+SequencingData <- SequencingData[,!monoind]
+# dim(SequencingData) #  180 34911 after removal of monomorphic
+
+# Add year meta data 
+CollectionData <- Additional_metadata[rownames(SequencingData[-(1:2),]),'Sample_Date']
+MetaData$year <- as.numeric(format(strptime(x = CollectionData, format = '%d-%b-%y'), format = '%y')) # Make sure Dates in the same order as SNPData
+
+# Total sample sizes and SNPs
+numSNPs <- ncol(SequencingData) # biallelic snps only 
+numSamples <- nrow(SequencingData[-(1:2),])
+
+# Calculate min sample size for different pairwise comparisons 
+Pair_wise_site_comparisons <- pairwise_site_distance[,c(1,2)]
+sample_size_min <- rep(NA, length = length(geo_order))
+names(sample_size_min) <- geo_order
+X <- table(MetaData$collection_location)
+for(i in 1:nrow(Pair_wise_site_comparisons)){
+  site1 <- as.character(Pair_wise_site_comparisons[i,1])
+  site2 <- as.character(Pair_wise_site_comparisons[i,2])
+  sample_size_min[i] <- min(c(X[site1], X[site2]))
+}
+save(sample_size_min, file = '../../RData/sample_size_min_seq.RData')
+
+# Save data store
+Data_store <- list(SNPData = SequencingData[-(1:2),], 
+                   MetaData = MetaData, 
+                   numSNPs = numSNPs,
+                   numSamples = numSamples) 
+save(Data_store, file = '../../RData/Data_store_WGS.RData')
+
+# Save WGS.txt and metadata.txt
+SequencingData[is.na(SequencingData)] <- -1 # Replace missiong
+write.table(t(SequencingData), file =  '../../TxtData/WGS.txt',
+            row.names = FALSE, col.names = TRUE, sep = '\t', quote = FALSE)
+write.table(MetaData, file =  '../../TxtData/WGS_metadata.txt', 
+            row.names = FALSE, col.names = TRUE, sep = '\t', quote = FALSE) 
+```
+
+The final text and RData files used for all downstream analyses (WGS.txt, Data_store_WGS.RData) contain data for `r numSNPs` polymorphic biallelic SNPs (Fig \ref{fig: freq spec}) and `r numSamples` isolates distributed over sites are years (Table \ref{tab: isolate counts}). 
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: freq spec}Allele frequency spectrun."), fig.width=7} 
+# Frequency spectrum
+par(mfrow = c(1,1), family = "serif", las = 2, pty = 'm')
+hist(freq, breaks = 100, col = 'gray', 
+     xlab = 'Allele frequency', freq = FALSE, main = '')
+```
+
+```{r, include = TRUE} 
+# Sample sizes per stage and site
+Sample_size_table <- t(table(MetaData[,c(1,2)]))
+Sample_size_table <- cbind(Sample_size_table, Total = rowSums(Sample_size_table)) # Add total column
+save(Sample_size_table, file = '../../RData/Sample_size_table_WGS.RData')
+kable(Sample_size_table, caption = '\\label{tab: isolate counts}Isolate counts over sites and years')
+```
+
+# References

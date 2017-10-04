@@ -1,0 +1,391 @@
+---
+title: "Barcode data preparation"
+header-includes:
+- \usepackage{float}
+output: pdf_document
+bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
+---
+
+```{r setup, include=FALSE}
+# Default chunk options
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, cache=TRUE, cache.comments = FALSE, fig.pos = 'H', fig.width=7, fig.height=7)
+library(knitr) # For kable
+rm(list = ls())
+```
+
+This document summarizes the data stored in Data_store_barcode and how they were processed. Consensus sequences were previously called for isolates considered monoclonal (isolates with 1-5 heteroallelic genotyping calls - Fig \ref{fig: het mono v multi}), replacing any het calls with 'N' (Fig \ref{fig: base for het}), akin to a sequencing error [@Nkhoma2013]. Hereafter minor/major SNPs are encoded 0 and 1, respectively, where minority/majority was based on proportions discarding mixed and ignoring missing. 
+
+```{r}
+rm(list = ls())
+
+# Source function to extract major freq
+source('../../FunctionFiles/extract_major_freq.R')
+
+# Load data from Nkhoma,S.C. et al. (2013) Population genetic correlates of declining transmission in a human pathogen. Mol. Ecol., 22, 273–285.
+Data <- read.table(file ='../../RawData/TableS3_Nkhoma_et_al.txt', header = TRUE, skip = 0, sep = "\t")
+
+# Inspect first two rows as column vectors size 10
+t(head(Data[,1:10], n = 2))
+dim(Data)
+
+# Remove NA columns corresponding to failed SNPs 
+Data <- Data[,-c(99,100)]
+```
+
+
+@Nkhoma2013 report
+
+* 1731 infections overall and here we have: `r nrow(Data)`
+* 629 from Wang Pha and here: `r sum(Data$Location.code == 'WPA')` from WPA
+* 396 from Maela and here: `r sum(Data$Location.code == 'MLA')` from MLA
+* 146 from Mae Kon Ken and here: `r sum(Data$Location.code == 'PLU')` from PLU
+* 560 from Mawker-Thai and here: `r sum(Data$Location.code == 'MKT')` from MKT 
+
+To conclude: MLA (Maela); WPA (Wang Pha); PLU (Mae Kon Ken); MKT (Mawker Thai)
+
+
+```{r}
+# Rename 'PLU' with 'MKK' (verfied from )
+old_site_code <- levels(Data$Location.code)
+new_site_code <- old_site_code
+new_site_code[new_site_code == 'PLU'] <- 'MKK'
+levels(Data$Location.code) <- new_site_code
+Data[Data$Location.code == 'PLU', 'Location.code'] <- 'MKK'
+```
+
+
+```{r}
+# Which samples have missing data? All at bottom
+which(rowSums(Data == 'N') > 0) 
+
+# Extract year and add
+Year <- do.call(rbind, strsplit(as.character(Data[,2]), split = "-"))[,3] 
+Data <- cbind(Year, Data) 
+rownames(Data) <- Data$Sample.ID
+
+# Separate barcodes from meta-data in first six columns
+SNPData <- Data[,-(1:6)]
+rownames(SNPData) <- Data$Sample.ID
+MetaData <- Data[,1:6]
+rownames(MetaData) <- MetaData$Sample.ID
+
+# Number of viable SNPs
+numSNPs <- ncol(SNPData)
+numSNPs
+
+# Check all 93 SNPs are polymorphic and biallelic - Yes!
+t(sapply(apply(SNPData, 2, unique), FUN = function(x){x[x != 'N']}))
+```
+
+
+```{r}
+#=======================================================================================
+# Has consensus been attributed to samples declared monoclonal but with >1 het calls?
+#=======================================================================================
+
+# Samples with het genotyping outcomes:
+hetconcensus <- apply(Data, 1, FUN = function(x){any(grepl('/', x))}) 
+
+# Samples labeled with >1 het genotyping outcome detected
+het1plus <- Data[,'No..of.heterozygous.SNPs'] > 0 
+
+# Samples declared multiclonal
+MOI1plus <- Data[,'Clonality'] == 'M' 
+
+# Are there any declared monoclonal (!MOI1plus) with >1 het genotyping outcome
+sum(!MOI1plus & het1plus) # yes
+
+# Are there any declared monoclonal (!MOI1plus) with >1 het genotyping outcome and '/'?
+sum(!MOI1plus & het1plus & hetconcensus) # no
+```
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: het mono v multi}Number of heteroallelic calls for isolates considered mono and multi-genotype."), fig.width=5, fig.height=7}
+par(mfrow = c(2,1), family = "serif", las = 2, pty = 'm')
+barplot(table(Data[!MOI1plus & het1plus,'No..of.heterozygous.SNPs']),
+        ylab = 'No of samples', xlab = 'No. of declared het calls', main = 'Declared monoclonal')
+barplot(table(Data[MOI1plus & het1plus,'No..of.heterozygous.SNPs']), 
+        ylab = 'No of samples',
+        xlab = 'No. of declared het calls', 
+        main = 'Declared multiclonal',
+        cex.names = 0.5, las = 2)
+```
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: base for het}Number of 'N' calls for isolates considered monoclonal but with 1 or more het calls versus all other isolates."), fig.width=5, fig.height = 5}
+# Consensus 'missing' or a base (A, T, G, or C)? Hard to say, because het SNP not flagged. However, all samples declared monoclonal with >1 het call have $\geq$ 1 missing, while many alternative samples have no missing data 
+par(mfrow = c(1,1), family = "serif", las = 2, pty = 'm')
+
+monoclonal_but_het <- table(rowSums(SNPData[!MOI1plus & het1plus,] == 'N'))
+alternative <- table(rowSums(SNPData[!(!MOI1plus & het1plus),] == 'N'))
+max_missing_per_sample <- max(as.numeric(names(monoclonal_but_het)), as.numeric(names(alternative)))
+store <- matrix(0,nrow = 2, ncol = 1+ max_missing_per_sample, 
+                dimnames = list(c('monoclonal but with one or more het call', 'other'),
+                                0:max_missing_per_sample))
+store['monoclonal but with one or more het call', names(monoclonal_but_het)] <- monoclonal_but_het/sum(monoclonal_but_het)
+store['other',names(alternative)] <- alternative/sum(alternative)
+par(mfrow = c(1,1))
+barplot(store, beside = TRUE, ylab = 'Frequency', xlab = 'No. missing calls per sample',
+        legend.text = TRUE, args.legend = list(bty = 'n'))
+```
+
+
+```{r}
+# Distribution of the declared monoclonal but with 1-5 het over years
+monoclonal_but_het_logical <- !MOI1plus & het1plus # All at the bottom of the data set
+
+# Years in relative terms
+barplot(table(as.numeric(Year[monoclonal_but_het_logical])) / table(as.numeric(Year)),
+        xlab = 'Year', ylab = 'Frequency of monoclonal with 1-5 het')
+```
+
+
+```{r}
+# Distribution of the declared monoclonal but with 1-5 het over sites 
+barplot(table(Data$Location.code[monoclonal_but_het_logical]) / table(Data$Location.code),
+        xlab = 'Year', ylab = 'Frequency of "monoclonal" but 1-5 het')
+```
+
+```{r}
+## Number of het calls over time
+require(vioplot)
+plot(NULL, bty = 'n', pch = 20, ylim =  c(0,100), ylab = 'No. of het calls', xlab = 'Years', las = 2, xlim = c(0.5,10.5))
+
+for(year in unique(Year)){
+  vioplot(Data[Year == year,'No..of.heterozygous.SNPs'], at = as.numeric(year), add = TRUE, col = 'gray')
+  points(y = mean(Data[Year == year,'No..of.heterozygous.SNPs']), x = as.numeric(year), pch = 16)
+}
+```
+
+```{r}
+### Number of het calls over sites
+plot(NULL, bty = 'n', pch = 20, ylim =  c(0,100), ylab = 'No. of het calls', xlab = 'Sites', las = 2, xlim = c(0.5,4.5), xaxt = 'n')
+axis(side = 1, at = 1:4, labels = unique(Data$Location.code))
+cols <- rainbow(4); names(cols) <- unique(Data$Location.code)
+
+for(site in unique(Data$Location.code)){
+  vioplot(Data[Data$Location.code == site,'No..of.heterozygous.SNPs'], at =    which(unique(Data$Location.code) == site), add = TRUE, col = 'gray')
+  points(y = mean(Data[Data$Location.code == site,'No..of.heterozygous.SNPs']), x = which(unique(Data$Location.code) == site), pch = 16, col = cols[site])
+}
+```
+
+```{r}
+### Number of het calls over sites and years 
+plot(NULL, bty = 'n', pch = 20, ylim =  c(0,100), ylab = 'No. of het calls', 
+     xlab = 'Year', las = 2, xlim = c(0.5,10.5))
+cols <- rainbow(4); names(cols) <- unique(Data$Location.code)
+
+for(year in unique(Year)){
+  for(site in unique(Data$Location.code)){
+    Data_het <- Data[Data$Location.code == site & Data$Year == year,'No..of.heterozygous.SNPs']
+    if(length(Data_het) > 10){
+      vioplot(Data_het, at = as.numeric(year), add = TRUE, col = adjustcolor(cols[site], alpha.f = 0.5))
+    }
+  }
+}
+legend('topleft', legend = unique(Data$Location.code), col = cols, 
+       pch = 16, bty = 'n', y.intersp = 1.2, horiz = TRUE, cex = 0.8)
+```
+
+```{r, cache = FALSE}
+# Multiclonal logical vector
+multiclonal <- MOI1plus
+
+# Missing logical vector (includes monoclonal but <6 het)
+missing <- apply(Data, 1, FUN = function(x){any(x[-(1:6)] == 'N')})
+```
+
+Of the data imported from TableS3_Nkhoma_et_al.txt
+
+* Percentage declared multiclonal: `r round(100*(sum(multiclonal)/length(multiclonal)),2)`
+* Percentage with missing: `r round(100*(sum(missing)/length(missing)),2)`
+* Number with missing: `r sum(missing)`
+* Number with missing excluding the samples with $\leq 5$ het calls: 
+`r sum(missing) - sum(!MOI1plus & het1plus)`
+
+
+```{r, cache = FALSE}
+# Filter het and missing
+Data_no_multiclonal_missing <- Data[!missing & !multiclonal,]
+Data_no_multiclonal <- Data[!multiclonal,]
+Data_no_missing <- Data[!missing,]
+
+# Extract major based on non-multiclonal only frequencies
+majorSNPstore <- do.call(rbind, apply(Data_no_multiclonal[,-(1:6)], 2, extract_major_freq))
+```
+
+
+```{r}
+#==============================================================================================
+# Create matrices with major (1) and minor (0), and freq matrix 
+#==============================================================================================
+
+# Create Freq stores
+SNPDataFreq_no_missing <- SNPData_no_missing <- Data_no_missing[,-(1:6)];
+SNPDataFreq_no_multiclonal <- SNPData_no_multiclonal <- Data_no_multiclonal[,-(1:6)];
+SNPDataFreq_no_multiclonal_missing <- SNPData_no_multiclonal_missing <- Data_no_multiclonal_missing[,-(1:6)]
+
+# Populate stores with minor and NA frequencies
+SNPData[] <- 0 # All minor (0)
+SNPDataFreq_no_missing[] <- SNPData_no_missing[] <- NA
+SNPDataFreq_no_multiclonal[] <- SNPData_no_multiclonal[] <- NA
+SNPDataFreq_no_multiclonal_missing[] <- SNPData_no_multiclonal_missing[] <- NA
+
+for(j in 1:numSNPs){
+  
+  # Populate matrix inc mixed and missing (replace missing outside loop)
+  indx_major <- (Data[,-(1:6)][,j] == majorSNPstore[j][[1]])
+  indx_mixed <- grepl('/',Data[,-(1:6)][,j])
+  SNPData[indx_major,j] <- 1 # Major 
+  SNPData[indx_mixed,j] <- 0.5 # Mixed
+  
+  # Populate matrices with no mixed or missing 
+  indx_no_missing <- (Data_no_missing[,-(1:6)][,j] == majorSNPstore[j][[1]])
+  indx_no_multiclonal <- (Data_no_multiclonal[,-(1:6)][,j] == majorSNPstore[j][[1]])
+  indx_no_multiclonal_missing <- (Data_no_multiclonal_missing[,-(1:6)][,j] == majorSNPstore[j][[1]])
+  
+  # Populate matrices with no mixed or missing
+  SNPDataFreq_no_multiclonal_missing[indx_no_multiclonal_missing,j] <- majorSNPstore[j,][[2]]
+  SNPDataFreq_no_multiclonal_missing[!indx_no_multiclonal_missing,j] <-  (1 - majorSNPstore[j,][[2]])
+  SNPData_no_multiclonal_missing[indx_no_multiclonal_missing,j] <- 1 # Major
+  SNPData_no_multiclonal_missing[!indx_no_multiclonal_missing,j] <- 0 # Minor
+  
+  # Populate matrices with no mixed (replace missing outside loop)
+  SNPDataFreq_no_multiclonal[indx_no_multiclonal,j] <-  majorSNPstore[j,][[2]]
+  SNPDataFreq_no_multiclonal[!indx_no_multiclonal,j] <-  (1 - majorSNPstore[j,][[2]])
+  SNPData_no_multiclonal[indx_no_multiclonal,j] <- 1
+  SNPData_no_multiclonal[!indx_no_multiclonal,j] <- 0
+  
+  # Populate matrices with no missing (replace multiclonal outside loop) 
+  SNPDataFreq_no_missing[indx_no_multiclonal,j] <-  majorSNPstore[j,][[2]]
+  SNPDataFreq_no_missing[!indx_no_multiclonal,j] <-  (1 - majorSNPstore[j,][[2]])
+  SNPData_no_missing[indx_no_multiclonal,j] <- 1
+  SNPData_no_missing[!indx_no_multiclonal,j] <- 0
+  # Add mixed
+  indx_mixed_no_missing <- grepl('/',Data_no_missing[,-(1:6)][,j])
+  SNPData_no_missing[indx_mixed_no_missing,j] <- 0.5
+}
+
+# Reintroduce missing for SNPData and SNPData_no_multiclonal
+SNPData[Data[,-(1:6)] == 'N'] <- NA
+SNPDataFreq_no_multiclonal[Data_no_multiclonal[,-(1:6)] == 'N'] <- NA
+SNPData_no_multiclonal[Data_no_multiclonal[,-(1:6)] == 'N'] <- NA
+```
+
+```{r}
+# All data (all missing at the top = bottom of data set):
+# * Missing = black
+# * Minor = dark grey
+# * Mixed = light grey 
+# * Major = white
+
+# Binary SNP data....
+SNPData_temp <- SNPData
+SNPData_temp[is.na(SNPData_temp)] <- -1
+image(z = t(SNPData_temp), xaxt = 'n', yaxt = 'n', zlim = c(-1,1),
+           col = grey.colors(4, start = 0, end = 1))
+```
+
+```{r, cache = FALSE, echo = FALSE}
+# No mixed (all missing at the top = bottom of data set):
+# 
+# * Missing = black
+# * Minor = grey
+# * Major = white
+
+SNPData_no_multiclonal_temp <- SNPData_no_multiclonal
+SNPData_no_multiclonal_temp[is.na(SNPData_no_multiclonal_temp)] <- -1
+image(z = t(SNPData_no_multiclonal_temp), xaxt = 'n', yaxt = 'n', zlim = c(-1,1),
+           col = grey.colors(3, start = 0, end = 1))
+```
+
+```{r, cache = FALSE, echo = FALSE}
+# No missing
+image(z = t(SNPData_no_multiclonal_missing), xaxt = 'n', yaxt = 'n', zlim = c(-1,1),
+           col = grey.colors(3, start = 0, end = 1))
+```
+
+```{r}
+par(mfrow = c(1,1))
+# Freq estimates for no multiclonal data
+SNPDataFreq_no_multiclonal_temp <- SNPDataFreq_no_multiclonal
+SNPDataFreq_no_multiclonal_temp[is.na(SNPDataFreq_no_multiclonal_temp)] <- -0.1
+image(z = t(SNPDataFreq_no_multiclonal_temp), xaxt = 'n', yaxt = 'n', zlim = c(-0.1,1),
+           col = grey.colors(100, start = 0, end = 1))
+```
+
+```{r}
+# Freq estimates no missing
+image(z = t(SNPDataFreq_no_multiclonal_missing), xaxt = 'n', yaxt = 'n', zlim = c(-0.1,1),
+           col = grey.colors(100, start = 0, end = 1))
+```
+
+
+```{r, cache = FALSE}
+# =========================================================================
+# Save data matrices
+# =========================================================================
+Data_store <- list(Data = Data,
+                        Data_no_multiclonal_missing = Data_no_multiclonal_missing,
+                        Data_no_multiclonal = Data_no_multiclonal,
+                        Data_no_missing = Data_no_missing,
+                        MetaData = MetaData,
+                        SNPData = SNPData,
+                        SNPData_no_missing = SNPData_no_missing,
+                        SNPData_no_multiclonal = SNPData_no_multiclonal,
+                        SNPData_no_multiclonal_missing = SNPData_no_multiclonal_missing,
+                        SNPDataFreq_no_missing = SNPDataFreq_no_missing,
+                        SNPDataFreq_no_multiclonal = SNPDataFreq_no_multiclonal,
+                        SNPDataFreq_no_multiclonal_missing = SNPDataFreq_no_multiclonal_missing)
+save(Data_store, file = '../../RData/Data_store_Barcode.RData')
+
+# Data for hmmIBD, which inc. single-genotype only, are generated and saved in S4 Appendix
+```
+
+In the analyses reported in the main manuscript, which are all based on either Data_store_barcode.RData, Barcode93.txt or Barcode24.txt (generated in S4Appendix.Rmd), we use single-genotype isolates only. 
+
+## Sample sizes
+```{r, cache = FALSE}
+generate_sample_size_matrix <- function(Data){
+  sample_size_store <- matrix(NA, 
+                              nrow = length(unique(Data$Location.code)), 
+                              ncol = length(unique(Data$Year)), 
+                              dimnames = list(unique(Data$Location.code), 
+                                              unique(Data$Year)))
+  
+  for(site in unique(Data$Location.code)){
+    for(year in unique(Data$Year)){
+      sample_size_store[site, year] <- sum(Data$Year == year & Data$Location.code == site)
+    }
+  }
+  
+  # And row and column sums
+  X0 <- cbind(sample_size_store, Total = rowSums(sample_size_store))
+  X1 <- rbind(X0, Total = colSums(X0))
+  
+  return(X1)
+}
+
+X1 <- generate_sample_size_matrix(Data = Data_no_missing)
+X2 <- generate_sample_size_matrix(Data = Data_no_multiclonal)
+X3 <- generate_sample_size_matrix(Data = Data_no_multiclonal_missing)
+X4 <- generate_sample_size_matrix(Data = Data)
+
+# Save X2 since that is the one we are ultimately working with
+Sample_size_table = X2
+save(Sample_size_table, file = '../../RData/Sample_size_table_Barcode.RData')
+```
+
+```{r, include = TRUE} 
+kable(X1, caption = '\\label{tab:x1}Isolate counts over sites and years, excluding those with missing data')
+```
+
+```{r, include = TRUE} 
+kable(X2, caption = '\\label{tab:x2}Single-genotype isolate counts over sites and years')
+```
+
+```{r, include = TRUE} 
+kable(X3, caption = '\\label{tab:x3}Single-genotype isolate counts over sites and years, excluding those with missing data')
+```
+
+```{r, include = TRUE} 
+kable(X4, caption = '\\label{tab:x4}Multi and single-genotype isolate counts over sites and years')
+```

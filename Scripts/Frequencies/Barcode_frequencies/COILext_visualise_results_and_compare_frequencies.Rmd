@@ -1,0 +1,424 @@
+---
+title: "Visualise results from frequency estimation and compare with propotions barcode data"
+output: pdf_document
+---
+
+This script plots results from running COIL extension on TM border data partioned by site and site and year, compared to proportion frequencies, which were based on data excluding all multiclonal. MCMC fit to each partition using, 10000 iterations, $\psi = 1$, $\phi = 1$,$\alpha = 1$, $\beta = 1$, $\sigma^2 = 1$. In the final draft on the manuscript the frequencies inferred under the COIL extension model were deemed superfluous. 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = FALSE)
+```
+
+```{r, cach = FALSE, echo = FALSE} 
+rm(list = ls())
+library("arm") # for logit
+
+# Load inferred values (based on data with multiclonal but not missing) 
+load('../../../RData/COIext_MOIpop_extracted_site_year.RData')
+MOI_quants_site_year <- MOI_quants
+load('../../../RData/COIext_f_extracted_site_year.RData')
+frequency_quants_site_year <- frequency_quants
+load('../../../RData/COIext_MOIpop_extracted_site.RData')
+MOI_quants_site <- MOI_quants
+load('../../../RData/COIext_f_extracted_site.RData')
+frequency_quants_site <- frequency_quants
+load('../../../RData/COIext_MOIpop_extracted_all.RData')
+MOI_quants_all <- MOI_quants
+load('../../../RData/COIext_f_extracted_all.RData')
+frequency_quants_all <- frequency_quants
+
+# Based on data with no multiclonal
+load('../../../RData/Barcode_frequencies_no_multiclonal.RData')
+load('../../../RData/Data_store_Barcode.RData')
+nsamples_no_missing <- nrow(Data_store$Data_no_missing)
+nsamples_no_missing_mixed <- nrow(Data_store$Data_no_multiclonal_missing)
+```
+
+***************************************************
+
+# MOI with site and year
+
+```{r, cach = FALSE, echo = FALSE, include = TRUE} 
+site_years <- colnames(MOI_quants_site_year)
+sites <- unique(sapply(strsplit(site_years, split = ':'), FUN = function(x){x[1]}))
+cols <- rainbow(length(sites)); names(cols) <- sites
+
+# Plot average MOIs
+plot(NULL, ylim = c(1,2.5), xlim = c(1,10),
+     bty = 'n', xlab = 'Year', ylab = 'Population-level MOI', 
+     las = 2, xaxt = 'n')
+axis(side = 1, at = 1:10, labels = 2001:2010, las = 2)
+for(site in sites){
+  ind <- grep(site, colnames(MOI_quants_site_year))
+  years <- as.numeric(sapply(strsplit(colnames(MOI_quants_site_year)[ind], split = ':'), FUN = function(x){x[2]}))
+  points(y = MOI_quants_site_year['50%', ind], x = years, col = cols[site], pch = 16)
+  segments(y0 = MOI_quants_site_year['2.5%', ind], y1 = MOI_quants_site_year['97.5%', ind], 
+           x0 = years, x1 = years, 
+           col = cols[site])
+}
+legend('top', legend = c("MKT", "MLA", "MKK", "WPA"), col = cols[sites], 
+       pch = 16, bty = 'n', y.intersp = 1.2)
+
+# Is the trend in median posterior estimates significant? Yes. 
+X0 <- colnames(MOI_quants_site_year)
+X_years <- as.numeric(sapply(strsplit(X0, split = ':'), FUN = function(x){x[2]}))
+X_sites <- sapply(strsplit(X0, split = ':'), FUN = function(x){x[1]})
+fit_moi_year <- lm(MOI_quants_site_year['50%',] ~ X_years)
+summary(fit_moi_year)
+
+# Summary of fitting procedure
+# annova(year + sites + interaction) -> interaction not signif
+# annova(year + sites) -> sites signif (p-value 0.02); but no site signif in summary(year + sites)
+# annova(year) -> years highly signif
+fit_moi_sites_year <- lm(MOI_quants_site_year['50%',] ~ X_years + X_sites)
+summary(fit_moi_sites_year) # Trend is not significant over sites 
+```
+
+```{r, cach = FALSE, echo = FALSE, include = TRUE}
+# Not that MOI_quants_site['50%',] has been translated by one
+# in order to start y axis at 1
+X <- barplot(MOI_quants_site['50%',]-1, col = 'grey', ylim = c(0,1), ylab = 'Population-level MOI', yaxt = 'n', names.arg = c("MKT", "MLA", "MKK", "WPA")) # Checked site order
+segments(y0 = MOI_quants_site['2.5%',]-1, y1 = MOI_quants_site['97.5%',]-1,
+         x0 = X, x1 = X)
+axis(side = 2, at = seq(0,1,0.2), labels = seq(1,2,0.2))
+```
+
+# MOI over all 
+Average MOI: `r MOI_quants_all[1]`, which is pretty similar to averaging over the site-wise mediums: `r sum(MOI_quants_site['50%',])/4` 
+
+
+***********************************
+
+# Inferred frequencies by site and year
+
+```{r, cach = FALSE, echo = FALSE, include = TRUE} 
+
+# Plot frequencies against year 
+plot(NULL, ylim = c(0,1), xlim = c(1,10), xaxt = 'n',
+     bty = 'n', xlab = 'Year', ylab = 'Frequency')
+axis(side = 1, at = 1:10, labels = 2001:2010, las = 1)
+
+for(site in sites){
+  ind <- grep(site, site_years)
+  years_char <- sapply(strsplit(site_years[ind], split = ':'), FUN = function(x){x[2]})
+  years <- as.numeric(years_char)
+  
+  for(i in 1:length(ind)){
+    X0 <- rnorm(length(frequency_quants_site_year[,'50%',ind[i]]), sd = 0.2)
+    points(y = frequency_quants_site_year[,'50%',ind[i]], 
+           x = rep(years[i], 93) + X0, 
+           col = adjustcolor(cols[site], alpha.f = 1), pch = 16, cex = 0.5)
+    segments(y0 = frequency_quants_site_year[,'2.5%',ind[i]], 
+             y1 = frequency_quants_site_year[,'97.5%',ind[i]], 
+             x0 = rep(years[i], 93) + X0, 
+             x1 = rep(years[i], 93) + X0, 
+             col = adjustcolor(cols[site], alpha.f = 0.5), lwd = 0.5)
+    points(y = FreqResultsStore_counting$site_years[years_char[i],site,], pch = 4, 
+           x = rep(years[i], 93) + X0, cex = 0.5, col = adjustcolor(cols[site], alpha.f = 1))
+  }
+}
+legend('bottom', legend = sites, col = cols[sites], 
+       pch = 16, bty = 'n', cex = 0.8)
+
+
+
+
+# Do frequencies vary between sites and years? --------------------------------------
+Data_short_format <- frequency_quants_site_year[,'50%',]
+sites_short_format <- sapply(strsplit(colnames(Data_short_format), ':'), FUN = function(x){x[1]})
+years_short_format <- as.numeric(sapply(strsplit(colnames(Data_short_format), ':'), FUN = function(x){x[2]}))
+Data_long_format <- data.frame(freq = as.vector(Data_short_format), 
+                               snp_id = as.factor(rep(1:93,ncol(Data_short_format))),
+                               site = as.factor(rep(sites_short_format, each = 93)),
+                               year = rep(years_short_format, each = 93))
+
+# Fit pooled No
+fit_pooled <- lm(freq ~ site + year, data = Data_long_format) 
+summary(fit_pooled) # Pooled: site/year not signif 
+anova(fit_pooled) # Pooled: site/year not signif 
+
+# Fit individually
+snp_ids <- unique(Data_long_format$snp_id)
+significant_year <- c()
+significant_site <- c()
+for(snp_id in snp_ids){
+  ind <- Data_long_format$snp_id == snp_id
+  Data_subset <- Data_long_format[ind,]
+  fit_individual <- lm(freq ~ year + site, data = Data_subset)
+  Z <- summary(fit_individual)
+  if(Z$coefficients['year','Pr(>|t|)'] < (0.05)/93){ # toggle between 'site' and 'year'
+    print(Z$coefficients['year',])
+    significant_year <- c(significant_year, snp_id)
+  }
+}
+significant_year
+# Differences over time after bonferroni correction: 
+```
+
+
+## Do proportion frequencies vary between sites and years?
+This section features in the supplementary of the final draft of the manuscript
+
+```{r, cach = FALSE, echo = FALSE} 
+# Based on point estimates of frequencies, since these are what are used in the IBD analyses
+rm(Data_long_format)
+Freq <- as.vector(FreqResultsStore_counting$site_years)
+ind_na <- is.na(Freq)
+sites_short_format <- rep(rep(dimnames(FreqResultsStore_counting$site_years)[[2]], 
+                              each = 10), 93)
+years_short_format <- rep(rep(1:10, 4), 93)
+Data_long_format <- data.frame(freq = Freq[!ind_na], 
+                               snp_id = as.factor(rep(1:93, each = 10 * 4))[!ind_na],
+                               site = sites_short_format[!ind_na],
+                               year = years_short_format[!ind_na])
+
+library(reshape2) # For switching between long and wide format using dcast
+Data_wide_format <- dcast(Data_long_format, site + year ~ snp_id, value.var = 'freq')
+
+# Fit pooled 
+fit_pooled <- lm(freq ~ site + year, data = Data_long_format) 
+summary(fit_pooled) # Not significant
+anova(fit_pooled) # Not significant
+
+# Fit individually
+fit_individual <- lm(as.matrix(Data_wide_format[,3:95]) ~ Data_wide_format$site + Data_wide_format$year) 
+summary_fit_indv <- summary(fit_individual)
+p_value_store <- t(sapply(summary_fit_indv, function(x){x$coefficients[-1,4]}))
+
+# Coefficient significance
+apply(p_value_store, 2, function(x){sum(x < 0.05)}) # Before bonferroni correction
+apply(p_value_store, 2, function(x){sum(x < 0.05/93)}) # After bonferroni correction
+rm(p_value_store)
+
+# Anova method (This features in the final draft of the manuscript)
+anova_fit <- manova(as.matrix(Data_wide_format[,3:95]) ~ Data_wide_format$year + Data_wide_format$site)
+X <- summary.aov(anova_fit)           # univariate ANOVA tables 
+p_value_store <- t(sapply(X, function(x) {x[1:2,5]})) 
+apply(p_value_store, 2, function(x){sum(x < 0.05)}) # Year comes first, then clinic
+apply(p_value_store, 2, function(x){sum(x < 0.05/93)})
+```
+
+
+**************************Show in New WindowClear OutputExpand/Collapse Output
+
+Call:
+lm(formula = MOI_quants_site_year["50%", ] ~ X_years)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.29284 -0.04597  0.01826  0.05110  0.33251 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  1.564767   0.053311  29.352  < 2e-16 ***
+X_years     -0.038298   0.007648  -5.007 5.18e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1156 on 22 degrees of freedom
+Multiple R-squared:  0.5326,	Adjusted R-squared:  0.5114 
+F-statistic: 25.07 on 1 and 22 DF,  p-value: 5.176e-05
+
+
+Call:
+lm(formula = MOI_quants_site_year["50%", ] ~ X_years + X_sites)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-0.216462 -0.046135 -0.000627  0.046743  0.238760 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  1.569013   0.085078  18.442 1.38e-13 ***
+X_years     -0.039213   0.007143  -5.490 2.69e-05 ***
+X_sitesMKT  -0.079711   0.069477  -1.147    0.265    
+X_sitesMLA   0.090417   0.071699   1.261    0.223    
+X_sitesWPA   0.023960   0.071199   0.337    0.740    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.09653 on 19 degrees of freedom
+Multiple R-squared:  0.7186,	Adjusted R-squared:  0.6594 
+F-statistic: 12.13 on 4 and 19 DF,  p-value: 4.586e-05
+
+R Console
+
+
+Call:
+lm(formula = MOI_quants_site_year["50%", ] ~ X_years)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.29284 -0.04597  0.01826  0.05110  0.33251 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  1.564767   0.053311  29.352  < 2e-16 ***
+X_years     -0.038298   0.007648  -5.007 5.18e-05 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1156 on 22 degrees of freedom
+Multiple R-squared:  0.5326,	Adjusted R-squared:  0.5114 
+F-statistic: 25.07 on 1 and 22 DF,  p-value: 5.176e-05
+
+
+Call:
+lm(formula = MOI_quants_site_year["50%", ] ~ X_years + X_sites)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-0.216462 -0.046135 -0.000627  0.046743  0.238760 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  1.569013   0.085078  18.442 1.38e-13 ***
+X_years     -0.039213   0.007143  -5.490 2.69e-05 ***
+X_sitesMKT  -0.079711   0.069477  -1.147    0.265    
+X_sitesMLA   0.090417   0.071699   1.261    0.223    
+X_sitesWPA   0.023960   0.071199   0.337    0.740    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.09653 on 19 degrees of freedom
+Multiple R-squared:  0.7186,	Adjusted R-squared:  0.6594 
+F-statistic: 12.13 on 4 and 19 DF,  p-value: 4.586e-05
+
+Show in New WindowClear OutputExpand/Collapse Output
+
+Show in New WindowClear OutputExpand/Collapse Output
+
+Call:
+lm(formula = freq ~ site + year, data = Data_long_format)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.44896 -0.09301  0.00154  0.09724  0.32743 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  6.466e-01  1.232e-02  52.475   <2e-16 ***
+siteMKT      2.700e-03  1.006e-02   0.268    0.788    
+siteMLA      2.224e-04  1.038e-02   0.021    0.983    
+siteWPA     -8.707e-05  1.031e-02  -0.008    0.993    
+year         9.458e-04  1.035e-03   0.914    0.361    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1348 on 2227 degrees of freedom
+Multiple R-squared:  0.0004532,	Adjusted R-squared:  -0.001342 
+F-statistic: 0.2524 on 4 and 2227 DF,  p-value: 0.9083
+
+Analysis of Variance Table
+
+Response: freq
+            Df Sum Sq   Mean Sq F value Pr(>F)
+site         3  0.003 0.0010546  0.0580 0.9817
+year         1  0.015 0.0151932  0.8358 0.3607
+Residuals 2227 40.484 0.0181788               
+     Estimate    Std. Error       t value      Pr(>|t|) 
+-2.685351e-02  4.688386e-03 -5.727666e+00  1.608018e-05 
+[1] "11"
+R Console
+
+
+Call:
+lm(formula = freq ~ site + year, data = Data_long_format)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.44896 -0.09301  0.00154  0.09724  0.32743 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  6.466e-01  1.232e-02  52.475   <2e-16 ***
+siteMKT      2.700e-03  1.006e-02   0.268    0.788    
+siteMLA      2.224e-04  1.038e-02   0.021    0.983    
+siteWPA     -8.707e-05  1.031e-02  -0.008    0.993    
+year         9.458e-04  1.035e-03   0.914    0.361    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1348 on 2227 degrees of freedom
+Multiple R-squared:  0.0004532,	Adjusted R-squared:  -0.001342 
+F-statistic: 0.2524 on 4 and 2227 DF,  p-value: 0.9083
+
+Analysis of Variance Table
+
+Response: freq
+            Df Sum Sq   Mean Sq F value Pr(>F)
+site         3  0.003 0.0010546  0.0580 0.9817
+year         1  0.015 0.0151932  0.8358 0.3607
+Residuals 2227 40.484 0.0181788               
+     Estimate    Std. Error       t value      Pr(>|t|) 
+-2.685351e-02  4.688386e-03 -5.727666e+00  1.608018e-05 
+[1] "11"*************************
+
+# Frequencies by site (test differences at individual snp-level using the data partioned by year)
+
+```{r, cach = FALSE, echo = FALSE} 
+# Plot against site
+plot(NULL,ylim = c(0.2,1), xlim = c(0.5,4.4), ylab = 'Allele frequency', 
+     xlab = '', bty = 'n', xaxt = 'n')
+for(i in 1:93){
+  X0 <- rnorm(n = length(frequency_quants_site[i,'50%',]), sd = 0.1)
+  points(y = frequency_quants_site[i,'50%',], x = 1:4 + X0, pch = 20, 
+         col = 'darkblue')  
+  segments(y0 = frequency_quants_site[i,'2.5%',], 
+           y1 = frequency_quants_site[i,'97.5%',], 
+           x0 = 1:4+X0, x1 = 1:4+X0, lwd = 0.5, 
+           col = adjustcolor('darkblue', alpha.f = 0.75))
+  points(y = FreqResultsStore_counting$site[,i], x = 1:4 + X0, pch = 4, 
+         col = 'darkblue') 
+}
+axis(side = 1, cex.axis = 1, at = 1:4, line = -1, tick = FALSE, 
+     labels = c('Mawker Thai', 'Maela','Mae Kon Ken','Wang Pha'), )
+legend(x = 0.8, y = 0.36, bty = 'n', pch = c(20, 4), 
+       col = 'darkblue', 
+       legend = c('model-based estimate','frequency-based estimate')) 
+
+# Inferred: No significant differnce between sites dropping snp-id 
+kruskal.test(list(frequency_quants_site[,'50%','MKT'],
+                  frequency_quants_site[,'50%','MLA'],
+                  frequency_quants_site[,'50%','MKK'],
+                  frequency_quants_site[,'50%','WPA']))
+
+# Proportion: 
+kruskal.test(list(FreqResultsStore_counting$site['MKT',],
+                  FreqResultsStore_counting$site['MLA',],
+                  FreqResultsStore_counting$site['MKK',],
+                  FreqResultsStore_counting$site['WPA',]))
+```
+
+# Do proportion frequencies fall within CIs of inferred frequencies? 
+```{r, cach = FALSE, echo = FALSE, include = TRUE} 
+# Over sites 
+within_CI_store <- array(dim = c(93, length(sites)), dimnames = list(NULL, sites))
+for(site in sites){
+  for(i in 1:93){
+    prop <- FreqResultsStore_counting$site[ifelse(site == 'PLU', 'MKK', site), i]
+    min_inf <- frequency_quants_site[i,'2.5%',site]
+    max_inf <- frequency_quants_site[i,'97.5%',site]
+    within_CI_store[i, site] <- min_inf <= prop & prop <= max_inf
+  }  
+}
+mean(within_CI_store)
+colSums(within_CI_store)/93 # Well over half fall within 95% CIs
+
+# Over sites and years
+within_CI_store <- frequency_quants_site_year[,1,]
+for(i in 1:93){
+  for(j in 1:24){
+    X <- dimnames(frequency_quants_site_year)[[3]][j]
+    site <- strsplit(X, split = ":")[[1]][1]
+    year <- strsplit(X, split = ":")[[1]][2]
+    prop <- FreqResultsStore_counting$site_year[year, site, i]
+    min_inf <- frequency_quants_site_year[i,'2.5%',j]
+    max_inf <- frequency_quants_site_year[i,'97.5%',j]
+    within_CI_store[i, j] <- min_inf <= prop & prop <= max_inf
+  }  
+}
+mean(within_CI_store) # Well over half fall within 95% CIs
+```
+

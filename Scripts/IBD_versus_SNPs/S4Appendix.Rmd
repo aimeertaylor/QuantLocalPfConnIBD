@@ -1,0 +1,368 @@
+---
+title: "S4 Appendix"
+header-includes:
+- \usepackage{xfrac}
+- \usepackage{bm}
+- \usepackage{float}
+output: pdf_document
+bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
+---
+
+<!-- Change figure labels -->
+\makeatletter
+\renewcommand{\fnum@figure}{Fig S4.\thefigure}
+\makeatother
+
+```{r setup, include=FALSE}
+#===============================================================================
+# Default chunk options
+#===============================================================================
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, cache=TRUE, cache.comments = FALSE, fig.pos = 'H', fig.width = 7, dev = 'png', dpi = 300)
+```
+
+```{r}
+#===============================================================================
+# First we cherry pick 24 SNP barcode based on proportions
+#===============================================================================
+rm(list = ls())
+
+# Load Barcode data
+load('../../RData/Data_store_barcode.RData')
+attach(Data_store)
+names_barcode93 <- colnames(SNPData)
+
+# Cherry pick 24 SNP barcode 
+X0 <- colMeans(SNPData_no_multiclonal, na.rm = TRUE)
+X1 <- sort(pmin(1-X0, X0), decreasing = TRUE, index.return = TRUE)
+names_barcode24 <- names(X1$x[1:24])
+pos_order_barcode24 <- sort(X1$ix[1:24], decreasing = FALSE, index.return = TRUE)$ix
+```
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: barcode}93 and 24-SNP barcode positions"), fig.width = 5, fig.height = 5}
+#===============================================================================================
+# Plot the barcode positions mapped to 3d7 v3, 
+# which Seth mapped using sequence alignment of context 
+# (extracted from Nkhoma2013_supp_Table_S1) to redefine positions 
+par(mfrow = c(1,1), pty = 'm', family = "serif")
+#===============================================================================================
+# Plot barcodes
+snp_positions_96 <- read.table('../../TxtData/snp_positions_3d7.txt')
+rownames(snp_positions_96) <- gsub('-', '.',as.character(snp_positions_96$V4))
+
+# Copy and pasted from plasmodb (there are better ways to do this)
+chr_length <- c(640851, 947102, 1067971, 1200490, 1343557, 
+                1418242, 1445207, 1472805, 1541735, 1687656, 
+                2038340, 2271494, 2925236, 3291936)
+# Plot set up 
+par(mfrow = c(1,1), mar = c(1,1,1,1)) # Generate plot of successful snp positions 
+barplot_pos <- barplot(chr_length , bty = 'n', horiz = TRUE, xaxt = 'n', col = 'lightgray')
+axis(side = 2, at = barplot_pos, labels = 1:14, las = 2, cex = 0.7, line = -1, tick = FALSE)
+
+# 93-SNP barcode
+snp_positions_93 <- snp_positions_96[names_barcode93,]
+chr93 <- as.numeric(do.call(rbind, strsplit(as.character(snp_positions_93[,1]), split = "_"))[,2])
+for(c in 1:14){
+  indices <- which(chr93 == c)
+  for(indx in indices){
+    segments(y0 = barplot_pos[c,1]-0.4, y1 = barplot_pos[c,1]+0.4, 
+             x0 = snp_positions_93[indx,2], 
+             x1 = snp_positions_93[indx,2], lwd = 2)   
+  }
+}
+
+# 24-SNP barcode
+snp_positions_24 <- snp_positions_96[names_barcode24,]
+chr24 <- as.numeric(do.call(rbind, strsplit(as.character(snp_positions_24[,1]), split = "_"))[,2])
+for(c in 1:14){
+  indices <- which(chr24 == c)
+  for(indx in indices){
+    points(y = barplot_pos[c,1],
+           x = snp_positions_24[indx,2], 
+           pch = 20, col = 'hotpink')
+  }
+}
+
+legend('right', legend = c('93-SNP barcode', '24-SNP barcode'), bty = 'n', 
+       col = c('black', 'hotpink'), lty = 1, inset = 0.15, lwd = c(2,0), pch = c(NA,16))
+```
+
+```{r}
+# Save SNP positions -------------------------------------------------------------
+write.table(x = snp_positions_96[names_barcode93, 1:2], col.names = FALSE, row.names = FALSE, quote = FALSE,
+            file = '../../TxtData/snp_3d7v3pos_93.txt')
+write.table(x = snp_positions_96[names_barcode24, 1:2], col.names = FALSE, row.names = FALSE, quote = FALSE,
+            file = '../../TxtData/snp_3d7v3pos_24.txt')
+
+# Save Barcode data (all single-infection)
+X93 <- data.frame(chrom = chr93, pos = snp_positions_96[names_barcode93, 2], t(SNPData_no_multiclonal))
+colnames(X93)[c(-1,-2)] <- rownames(SNPData_no_multiclonal)
+X93[is.na(X93)] <- -1 # Replace NA with -1
+X24 <- X93[names_barcode24, ][pos_order_barcode24,] # Re-sort so in order of chr/pos
+
+write.table(X93, file = '../../TxtData/Barcode93.txt',sep = '\t', col.names = TRUE, quote = FALSE, row.names = FALSE)
+write.table(X24, file = '../../TxtData/Barcode24.txt',sep = '\t', col.names = TRUE, quote = FALSE,
+            row.names = FALSE)
+``` 
+
+```{r}
+#======================================================================================
+# Edit WGS 93 and 24 text files to remove MaeRaMat
+# Background: Steve created snp_93.txt snp_24.txt
+# using snp_3d7v3pos_93.txt and snp_3d7v3pos_24.txt  
+# (see email thread with Steve Nov 11 2016)
+# These were created from new_biallelic_poly.recode.vcf, and so contain MaeRaMat
+#======================================================================================
+# Before running them through hmmIBD, let's remove MaeRaMat and re-write
+WGS <- read.table('../../TxtData/WGS.txt', sep = '\t', header = TRUE, as.is = TRUE)
+snp_93 <- read.table('../../TxtData/snp_93.txt', sep = '\t', header = TRUE, as.is = TRUE)
+snp_24 <- read.table('../../TxtData/snp_24.txt', sep = '\t', header = TRUE, as.is = TRUE)
+
+snp_93_no_maeramat <- snp_93[,colnames(snp_93) %in% colnames(WGS)] 
+snp_24_no_maeramat <- snp_24[,colnames(snp_24) %in% colnames(WGS)] 
+
+write.table(snp_93_no_maeramat, file = '../../TxtData/snp_93_no_maeramat.txt',
+            sep = '\t', col.names = TRUE, quote = FALSE, row.names = FALSE)
+write.table(snp_24_no_maeramat, file = '../../TxtData/snp_24_no_maeramat.txt',
+            sep = '\t', col.names = TRUE, quote = FALSE, row.names = FALSE)
+
+# An aside: not that not all 24 nor 93 WGS snp pos are in WGS.txt (do not pass all filters)
+pos_93 <- apply(snp_93[,1:2], 1, paste, collapse = '_')
+pos_24 <- apply(snp_24[,1:2], 1, paste, collapse = '_')
+pos_wg <- apply(WGS[,1:2], 1, paste, collapse = '_')
+all(pos_24 %in% pos_93)
+all(pos_24 %in% pos_wg) # Not all 
+all(pos_93 %in% pos_wg) # Not all
+```
+
+```{r}
+# #===========================================================================================
+# # Run hmmIBD with rho = 7.4e-7 and 1 on different data types 
+# #===========================================================================================
+# # Regular HMM
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD -i ../../TxtData/Barcode93.txt -o barcode93')) # 66.905 sec
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD -i ../../TxtData/Barcode24.txt -o barcode24')) # 16 sec
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD -i ../../TxtData/WGS.txt -o WGS')) # 490 sec (8 mins)
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD -i ../../TxtData/snp_93_no_maeramat.txt -o WGS93')) # 1.5 sec
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD -i ../../TxtData/snp_24_no_maeramat.txt -o WGS24')) # 1.5 sec
+# 
+# # Pseudo zeroth order HMM
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD_rec_rate1 -i ../../TxtData/Barcode93.txt -o barcode93_zeroth_order')) # 57 sec
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD_rec_rate1 -i ../../TxtData/snp_93_no_maeramat.txt -o WGS93_zeroth_order')) # 1.752 sec
+# system.time(system('~/Documents/BroadLaptop/hmmIBD-2.0.0/hmmIBD_rec_rate1 -i ../../TxtData/snp_24_no_maeramat.txt -o WGS24_zeroth_order')) # 0.35 sec
+# 
+# # Copy results back
+# system('mv ./*.txt ../../TxtData/')
+```
+
+```{r}
+#===========================================================================================
+# Import results
+#===========================================================================================
+barcodef93 <- read.table('../../TxtData/barcode93.hmm_fract.txt', sep = '\t', header = TRUE, as.is = TRUE)
+barcodez93 <- read.table('../../TxtData/barcode93_zeroth_order.hmm_fract.txt', sep = '\t', header = TRUE, as.is = TRUE)
+WGSf <- read.table('../../TxtData/WGS.hmm_fract.txt', sep = '\t', header = TRUE, as.is = TRUE)
+WGSf93 <- read.table('../../TxtData/WGS93.hmm_fract.txt', sep = '\t', header = TRUE, as.is = TRUE)
+WGSz93 <- read.table('../../TxtData/WGS93_zeroth_order.hmm_fract.txt', sep = '\t', header = TRUE, as.is = TRUE)
+WGSf24 <- read.table('../../TxtData/WGS24.hmm_fract.txt', sep = '\t', header = TRUE, as.is = TRUE)
+WGSz24 <- read.table('../../TxtData/WGS24_zeroth_order.hmm_fract.txt', sep = '\t', header = TRUE, as.is = TRUE)
+```
+
+```{r}
+#===========================================================================================
+# Name columns and check all match (not all 24 were returned)
+#===========================================================================================
+barcodef93$pair <- apply(cbind(barcodef93$sample1, barcodef93$sample2), 1, paste, collapse = '_', sep = '') 
+barcodez93$pair <- apply(cbind(barcodez93$sample1, barcodez93$sample2), 1, paste, collapse = '_', sep = '') 
+WGSf$pair <- apply(cbind(WGSf$sample1, WGSf$sample2), 1, paste, collapse = '_', sep = '') 
+WGSf93$pair <- apply(cbind(WGSf93$sample1, WGSf93$sample2), 1, paste, collapse = '_', sep = '') 
+WGSz93$pair <- apply(cbind(WGSz93$sample1, WGSz93$sample2), 1, paste, collapse = '_', sep = '') 
+WGSf24$pair <- apply(cbind(WGSf24$sample1, WGSf24$sample2), 1, paste, collapse = '_', sep = '') 
+WGSz24$pair <- apply(cbind(WGSz24$sample1, WGSz24$sample2), 1, paste, collapse = '_', sep = '') 
+
+# Check all same order (no because of MaeRaMat)
+any(barcodef93$pair != barcodez93$pair)
+any(WGSf$pair != WGSf93$pair)
+any(WGSf93$pair != WGSz93$pair)
+any(WGSz93$pair != WGSf24$pair)
+any(WGSf24$pair != WGSz24$pair)
+any(WGSf$pair != WGSz24$pair)
+
+# Some pairs were dropped in 24 anlysis
+nrow(WGSf93)
+nrow(WGSf24) 
+```
+```{r, include = TRUE, fig.cap=paste("\\label{fig: WGS 93 24}Comparison between $\\hat{\\pi}_{\\text{IBD}}$ based on the whole genome and 93 and 24 SNP subsets generated using 2001-2014 WGS data."), fig.width = 5, fig.height = 5}
+#===============================================================================
+# Plots showing that, IBD 93 and IBD 24 against IBD WGS
+par(mfrow = c(1,2), pty = 's', mar = c(4,4,2,2), family = "serif")
+#===============================================================================
+plot(NULL, xlim = c(0,1), ylim = c(0,1), bty = 'n', ylab = '', xlab = '')
+grid(nx = 4, ny = 4, col = "gray")
+points(x = WGSf$fract_sites_IBD, 
+       y = WGSf93$fract_sites_IBD, pch = 20,col = adjustcolor('black', alpha.f = 0.5))
+title(xlab = expression(hat(pi)[IBD]~'based on 34911 SNPs'), ylab = expression(hat(pi)[IBD]~'based on 93 SNPs'), line = 2.5, cex.axis = 0.7)
+abline(a = 0, b = 1, col = 'gray')
+
+plot(NULL, xlim = c(0,1), ylim = c(0,1), bty = 'n', ylab = '', xlab = '')
+grid(nx = 4, ny = 4, col = "gray")
+points(x = WGSf$fract_sites_IBD[WGSf$pair %in% WGSf24$pair], 
+       y = WGSf24$fract_sites_IBD, pch = 20,col = adjustcolor('black', alpha.f = 0.5))
+title(xlab = expression(hat(pi)[IBD]~'based on 34911 SNPs'), ylab = expression(hat(pi)[IBD]~'based on 24 SNPs'), line = 2.5, cex.axis = 0.7)
+abline(a = 0, b = 1, col = 'gray')
+```
+
+\pagebreak
+
+# Dependence between barcode SNPs under hmmIBD
+
+To capture dependence between SNPs as a function of inter-SNP distance $d_t$ (in base pairs), the hidden Markov model underpinning hmmIBD [see Appendix S1 of @Schaffner2017 for full details] includes a matrix whose elements are probabilities of switching between IBD and not IBD states at successive SNPs, denoted here by $\text{SNP}_{t-1}$ and $\text{SNP}_{t}$,   
+
+\begin{align}
+\bm{A}(t) 
+&= 
+\begin{bmatrix} 
+\mathbb{P}\big(\text{SNP}_t = \text{IBD} \mid \text{SNP}_{t-1} = \text{IBD} \big)  &  \mathbb{P}\big(\text{SNP}_t = \text{not IBD} \mid \text{SNP}_{t-1} = \text{IBD} \big) \\
+\mathbb{P}\big(\text{SNP}_t = \text{IBD} \mid \text{SNP}_{t-1} = \text{not IBD} \big) & \mathbb{P}\big(\text{SNP}_t = \text{not IBD} \mid \text{SNP}_{t-1} = \text{not IBD} \big)
+\end{bmatrix}, \nonumber \\ \nonumber \\ 
+&= 
+\begin{bmatrix} 
+1 - \pi_2(1 - e^{-k\rho d_t}) &  \pi_2(1 - e^{-k\rho d_t}) \\
+\pi_1(1 - e^{-k \rho d_t}) & 1-\pi_1(1 - e^{-k \rho d_t})
+\end{bmatrix}, \nonumber
+\end{align}
+
+where $\pi_1$ and $\pi_2 = 1 - \pi_1$ are the expected fraction IBD and not IBD, respectively ($\pi_1$ is inferred under the model, and is the output of interest, denoted $\hat{\pi}_{\text{IBD}}$, in the current study); $\rho$ is the recombination rate; and $k$ is the number of generations since the most recent common ancestor. Both $\rho$ and $k$ are considered fixed across the genome. Akin to $\pi_1$, $k$ is inferred under the model. When distances are large the exponential term tends to zero. That is, $\lim_{d_t \to \infty} e^{-k\rho d_t} = 0$, such that
+
+\begin{align}
+\lim_{d_t \to \infty} \bm{A}(t) 
+&= 
+\begin{bmatrix} 
+1 - \pi_2 &  \pi_2 \\
+\pi_1 & 1-\pi_1
+\end{bmatrix}, \nonumber \\ \nonumber \\ 
+&= 
+\begin{bmatrix} 
+\mathbb{P}\big(\text{SNP}_t = \text{IBD} \big)  &  \mathbb{P}\big(\text{SNP}_t = \text{not IBD} \big) \\
+\mathbb{P}\big(\text{SNP}_t = \text{IBD} \big) & \mathbb{P}\big(\text{SNP}_t = \text{not IBD} \big)
+\end{bmatrix}. \nonumber
+\end{align}
+
+In other words, when distances are sufficiently large that $e^{-k\rho d_t} \approx 0$, SNPs are effectively independent of one another. Fig S4.\ref{fig: switch} shows that for $\rho = 7.4\times 10^{-7}$ base pairs per Morgan [@Miles2016], and small numbers of generations, $k < 50$, $e^{-k\rho d_t} \neq 0$ for most distances between barcode SNPs. That is to say, barcode SNPs are dependent under hmmIBD providing $k$ is small because $\rho$ is low. 
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: switch}The effect of inter-93 and 24 barcode SNP distances on $\\exp(-\\rho d_t k)$ given different numbers of generations, $k$."), fig.width = 7, fig.height = 7}
+
+# Clear work space
+rho <- 7.4e-7 # Same as hmmIBD-2.0.0 
+
+Barcode93 <- read.table('../../TxtData/Barcode93.txt', sep = '\t', header = TRUE, as.is = TRUE)
+Barcode24 <- read.table('../../TxtData/Barcode24.txt', sep = '\t', header = TRUE, as.is = TRUE)
+distance93 <- Barcode93$pos[-1]-Barcode93$pos[-93]; 
+distance24 <- Barcode24$pos[-1]-Barcode24$pos[-24]; 
+distance93[distance93 < 0 | Barcode93$chrom[-1] != Barcode93$chrom[-93]] <- NA # Replace chromosome breaks
+distance24[distance24 < 0 | Barcode24$chrom[-1] != Barcode24$chrom[-93]] <- NA # Replace chromosome breaks
+
+#===============================================================================
+# Distance plot
+par(mfrow = c(2,2), pty = 'm', family = "serif")
+#===============================================================================
+# 93-sum(is.na(distance93)) # 80 linked SNPs
+# 24-sum(is.na(distance24)) # 16 linked SNPs
+for(k in c(1,5,10,50)){
+  plot(y = c(exp(-distance93*rho*k),exp(-distance24*rho*k)),  
+       x = c(distance93, distance24), pch = 16, bty = 'n', 
+       col = c(rep('gray',93), rep('blue',24)), 
+       xlab = expression('Distance between SNPs,'~d[t]~'(bp)'), 
+       ylab = '', 
+       ylim = c(0,1)) 
+  legend('topright', bty = 'n', legend = c('93-SNP barcode', '24-SNP barcode'),
+         pch = 16, col = c('gray', 'blue'))
+  mtext(side = 2, text = bquote(e^(-rho~d[t]~k == .(k))), line = 2, cex = 1.5)
+}
+#===========================================================================================
+# 1. Show that rho = 1 is sufficient for e^{-min_distance*min_k*rho} approx. 0
+#===========================================================================================
+# exp(-distance93*1*1) # exponential terms when rho = 1 and k = 1
+# exp(-distance24*1*1) # exponential terms when rho = 1 and k = 1
+```
+
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: zeroth}IBD proportion estimates generated hmmIBD allowing dependence and forcing independence between SNPs by varying $\\rho$."), fig.width = 5, fig.height = 5}
+# =============================================================
+# # Plot zeroth versus first for 93 and 24 SNP barcodes
+par(mfrow = c(1,1), pty = 'm', family = "serif")
+# =============================================================
+# Barcode (inc. in the supplementary)
+par(mfrow = c(1,1), pty = 's')
+plot(x = barcodef93$fract_sites_IBD, 
+     y = barcodez93$fract_sites_IBD, 
+     xlab = expression('93-SNP barcode'~hat(pi)[IBD]~'allowing dependence between SNPs using'~rho == 7.4e-7), 
+     ylab = expression('93-SNP barcode'~hat(pi)[IBD]~'forcing indpendence between SNPs using'~rho == 1), 
+     bty = 'n', xlim = c(0,1), ylim = c(0,1), cex.lab = 0.7)
+abline(a = 0, b = 1, col = 'blue')
+```
+
+
+```{r}
+# Zeroth versus first WGS 93
+plot(x = WGSf93$fract_sites_IBD, 
+     y = WGSz93$fract_sites_IBD, 
+     xlab = '93-SNP WGS IBD: first order HMM', 
+     ylab = '93-SNP WGS IBD: zeroth order HMM', 
+     bty = 'n', xlim = c(0,1), ylim = c(0,1))
+abline(a = 0, b = 1, col = 'blue')
+```
+
+```{r}
+par(mfrow = c(2,2))
+plot(y = WGSf93$fract_sites_IBD, 
+     x = WGSf$fract_sites_IBD, 
+     ylab = 'WGS 93-SNP IBD: first order HMM', 
+     xlab = 'WGS IBD: first order HMM', 
+     bty = 'n', xlim = c(0,1), ylim = c(0,1))
+abline(a = 0, b = 1, col = 'blue')
+
+plot(y = WGSz93$fract_sites_IBD, 
+     x = WGSf$fract_sites_IBD, 
+     ylab = 'WGS 93-SNP IBD: zeroth order HMM', 
+     xlab = 'WGS IBD: first order HMM', 
+     bty = 'n', xlim = c(0,1), ylim = c(0,1))
+abline(a = 0, b = 1, col = 'blue')
+
+plot(y = WGSf24$fract_sites_IBD, 
+     x = WGSf$fract_sites_IBD[WGSf$pair %in% WGSf24$pair], 
+     ylab = 'WGS 24-SNP IBD: first order HMM', 
+     xlab = 'WGS IBD: first order HMM', 
+     bty = 'n', xlim = c(0,1), ylim = c(0,1))
+abline(a = 0, b = 1, col = 'blue')
+
+plot(y = WGSz24$fract_sites_IBD, 
+     x = WGSf$fract_sites_IBD[WGSf$pair %in% WGSf24$pair], 
+     ylab = 'WGS 24-SNP IBD: zeroth order HMM', 
+     xlab = 'WGS IBD: first order HMM', 
+     bty = 'n', xlim = c(0,1), ylim = c(0,1))
+abline(a = 0, b = 1, col = 'blue')
+```
+
+\pagebreak
+
+# References
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
