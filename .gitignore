@@ -12,6 +12,12 @@
 /TxtData/**
 !TxtData/.gitignore
 
+
+# knitr and R markdown default cache directories
+**/*_cache/
+**/cache/
+
+
 #---------------------------------------------------
 # Patterns below are copied from gitignore templates
 #---------------------------------------------------
