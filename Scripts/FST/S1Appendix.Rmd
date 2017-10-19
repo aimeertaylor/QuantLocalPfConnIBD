@@ -1,5 +1,5 @@
 ---
-title: "S1 Appendix"
+title: "S1 Text"
 header-includes:
 - \usepackage{xfrac}
 - \usepackage{bm}
@@ -11,7 +11,8 @@ bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
 
 <!-- Change figure labels -->
 \makeatletter
-\renewcommand{\fnum@figure}{Fig S1.\thefigure}
+\renewcommand{\thefigure}{\Alph{figure}}
+\renewcommand{\thetable}{\Alph{table}}
 \makeatother
 
 ```{r setup, include=FALSE}
@@ -19,7 +20,6 @@ bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
 knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, cache=TRUE, cache.comments = FALSE, fig.pos = 'H', fig.width = 7)
 library(knitr) # For kable
 library(ade4) # for as.rtest
-source('~/Documents/BroadLaptop/TM_border/Rscripts/ForGitHub/FunctionFiles/simtests.R')
 library(arm) # for logit
 ```
 
@@ -45,7 +45,6 @@ set.seed(1) # for reproducibility of the p-values
 
 attach(Fst_barcode, warn.conflicts = FALSE)
 attach(geo_dist_info, warn.conflicts = FALSE)
-
 
 # It contains multilocas and SNPwise Fst estimates for all years, and stratified by year.
 # Also contains permuted estimates (for p-values) and CIs (based on bootstrapping SNPs).
@@ -225,7 +224,7 @@ colnames(Table) <- c('*Beta (p-value)','†Beta (p-value)','‡Beta (p-value)')
 #---------------------------------------------------------------------------------
 # Print Table 1
 #---------------------------------------------------------------------------------
-kable(Table, caption = '\\label{tab: trends barcode}Spatial trends over FST estimates based on barcode data (replicated as Table 1 in the main manuscript). All p-values are two-tailed and exact.') 
+kable(Table, caption = '\\label{tab: trends barcode}Spatial trends over FST estimates based on barcode data. All p-values are two-tailed and exact.') 
 ```
 
 ```{r, Fig2} 
@@ -627,7 +626,7 @@ colnames(Table) <- c('*Beta (p-value)','†Beta (p-value)','‡Beta (p-value)')
 #---------------------------------------------------------------------------------
 # Print Table 
 #---------------------------------------------------------------------------------
-kable(Table, caption = '\\label{tab: trends WGS}Spatial trends over FST estimates based on WGS data (replicated as Table 2 in the main manuscript). All p-values are two-tailed and extact.')
+kable(Table, caption = '\\label{tab: trends WGS}Spatial trends over FST estimates based on WGS data. All p-values are two-tailed and extact.')
 ```
 
 ```{r, Fig3}
@@ -786,7 +785,7 @@ text(y = logit(Pair_wise_site_comparisons_Fst[1,geo_order]),
 
 ## $F_{ST}$ estimates and minor allele frequency thresholds
 
-Some multilocus $F_{ST}$ estimators are sensitive to minor allele frequencies (MAFs), especially when marker ascertainment is not based an an out group and when estimators average over many ratios, each based on a different loci [@Bhatia2013]. We estimated multilocus $F_{ST}$ using Hudson's estimator, which takes a ratio of averages, rather than an average of ratios, and so should be comparatively robust to marker ascertainment [@Bhatia2013]. Indeed, Fig S1.\ref{fig: WGS MAF} shows that WGS-based $F_{ST}$ estimates generated using different MAF thresholds (that is to say, including only those SNPs with frequency estimates greater than the stated MAF threshold) were relatively stable. 
+Some multilocus $F_{ST}$ estimators are sensitive to minor allele frequencies (MAFs), especially when marker ascertainment is not based an an out group and when estimators average over many ratios, each based on a different loci [@Bhatia2013]. We estimated multilocus $F_{ST}$ using Hudson's estimator, which takes a ratio of averages, rather than an average of ratios, and so should be comparatively robust to marker ascertainment [@Bhatia2013]. Indeed, Fig \ref{fig: WGS MAF} shows that WGS-based $F_{ST}$ estimates generated using different MAF thresholds (that is to say, including only those SNPs with frequency estimates greater than the stated MAF threshold) were relatively stable. 
 
 
 ```{r, include=TRUE, fig.cap=paste("\\label{fig: WGS MAF}Estimates of $\\hat{F}_{ST}$  based on 2001-2014 WGS data given different minor allele frequency thresholds."), fig.width=7}
@@ -906,7 +905,7 @@ attach(geo_dist_info, warn.conflicts = FALSE)
 library(RColorBrewer)
 
 # Barcode
-load('/Users/aimeet/Documents/BroadLaptop/TM_border/RData/Fst_barcode_dwn.RData')
+load('../../RData/Fst_barcode_dwn.RData')
 sample_downs <- dimnames(Fst_barcode_dwn)[[3]]
 cols <- brewer.pal(length(sample_downs),"Dark2")
 plot(NULL, xlim = c(20,100), ylim = c(-0.001, 0.025), bty = 'n',
@@ -944,7 +943,7 @@ points(y = Fst_barcode$Pair_wise_site_comparisons_Fst[geo_order,'Reich'],
 
 
 # WGS
-load('/Users/aimeet/Documents/BroadLaptop/TM_border/RData/Fst_WGS_dwn.RData')
+load('../../RData/Fst_WGS_dwn.RData')
 sample_downs <- as.numeric(dimnames(Fst_WGS_dwn)[[3]])
 cols <- brewer.pal(4,"Dark2")
 plot(NULL, xlim = c(20,100), ylim = range(Fst_WGS_dwn), bty = 'n',
@@ -964,7 +963,7 @@ legend('top', legend = sample_downs, col = cols, pch = 20,
        cex = 0.75, horiz = TRUE)
 
 # Add actual
-load('/Users/aimeet/Documents/BroadLaptop/TM_border/Rscripts/ForGitHub/RData/Fst_WGS.RData')
+load('../../RData/Fst_WGS.RData')
 segments(y0 = Fst_WGS$Pair_wise_site_comparisons_Fst_CIs[geo_order,'2.5%'],
          y1 = Fst_WGS$Pair_wise_site_comparisons_Fst_CIs[geo_order,'97.5%'],
          x0 = geo_dist_info$pairwise_site_distance$distance,

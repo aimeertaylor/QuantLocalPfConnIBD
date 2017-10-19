@@ -1,5 +1,5 @@
 ---
-title: "S2 Appendix"
+title: "S2 Text"
 header-includes:
 - \usepackage{xfrac}
 - \usepackage{bm}
@@ -10,7 +10,8 @@ bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
 
 <!-- Change figure labels -->
 \makeatletter
-\renewcommand{\fnum@figure}{Fig S2.\thefigure}
+\renewcommand{\thefigure}{\Alph{figure}}
+\renewcommand{\thetable}{\Alph{table}}
 \makeatother
 
 
@@ -31,11 +32,11 @@ library(Hmisc) # cut2
 
 ## Motivation for regressing highly related parasite sample pairs onto distance
 
-Empirical density plots (Fig S2.\ref{fig:histMLA} to S2.\ref{fig:histMLA_MKT}) suggest that $\hat{\pi}_{\text{IBD}}$ for pairs of parasite samples within and across clinics loosely follow a mixture distribution over three classes: 1) near zero $\hat{\pi}_{\text{IBD}}$ shown in green; 2) low to intermediate $\hat{\pi}_{\text{IBD}}$ shown in shades of blue; and 3) high $\hat{\pi}_{\text{IBD}}$, which notably rarefies with distance, and is coloured red if sufficiently dense to be visible, and otherwise outlined in black. 
+Empirical density plots (Fig \ref{fig:histMLA} to \ref{fig:histMLA_MKT}) suggest that $\hat{\pi}_{\text{IBD}}$ for pairs of parasite samples within and across clinics loosely follow a mixture distribution over three classes: 1) near zero $\hat{\pi}_{\text{IBD}}$ shown in green; 2) low to intermediate $\hat{\pi}_{\text{IBD}}$ shown in shades of blue; and 3) high $\hat{\pi}_{\text{IBD}}$, which notably rarefies with distance, and is coloured red if sufficiently dense to be visible, and otherwise outlined in black. 
 
 We interpreted near zero $\hat{\pi}_{\text{IBD}}$ as comparisons between parasites whose relatives were either not sampled or where barcode SNPs were to few to resolve IBD; low to intermediate $\hat{\pi}_{\text{IBD}}$ as comparisons between panmictically mixing parasites; and high $\hat{\pi}_{\text{IBD}}$ as comparisons including recent parasite migrants.
 
-To distinguish recent migrants, we selected a threshold equal to 0.5 (dotted vertical lines, Fig S2.\ref{fig:histMLA} to S2.\ref{fig:histMLA_MKT}), labeling all comparisons above the threshold highly related. We then constructed logistic regression models, as outlined below, to quantify distance as a correlate of the probability of a comparison being highly related.
+To distinguish recent migrants, we selected a threshold equal to 0.5 (dotted vertical lines, Fig \ref{fig:histMLA} to \ref{fig:histMLA_MKT}), labeling all comparisons above the threshold highly related. We then constructed logistic regression models, as outlined below, to quantify distance as a correlate of the probability of a comparison being highly related.
 
 ```{r}
 #====================================================================================
@@ -315,7 +316,7 @@ To quantify temporally adjusted trends in relatedness with distance, the followi
 \end{align}
 \normalsize
 
-where $\ldots$ represent $\beta_0 + \beta_1\Delta\text{Distance}_i + \beta_2\text{Wang Pha}_i + \beta_3\text{Mawker Thai}_i + \beta_4\text{Maela}_i + \beta_5\text{Mae Kon Ken}_i$ as in model 2. Fig S2.\ref{fig: AIC} shows the AIC scores for the eight models with $\Delta\text{Time}_i$ measured to the nearest day, week, month or year. There was little difference between the AIC scores for models 6 and 8 (Table \ref{tab: AIC}). We chose the latter with $\Delta$Time measured in weeks because the interaction term allowed the impact of $\Delta$Distance to vary with $\Delta$Time, and weeks generated trend estimates of the same order as inter-clinic distance measured in kilometers (Fig S2.\ref{fig: coeff with time}). Importantly, inputs that were independent of $\Delta$Time were relatively robust to changes in the measurement of $\Delta$Time (Table \ref{tab: coef with time}), and $\beta_1$ was relatively robust to changes in model structure (Fig S2.\ref{fig: coeff with model}). 
+where $\ldots$ represent $\beta_0 + \beta_1\Delta\text{Distance}_i + \beta_2\text{Wang Pha}_i + \beta_3\text{Mawker Thai}_i + \beta_4\text{Maela}_i + \beta_5\text{Mae Kon Ken}_i$ as in model 2. Fig \ref{fig: AIC} shows the AIC scores for the eight models with $\Delta\text{Time}_i$ measured to the nearest day, week, month or year. There was little difference between the AIC scores for models 6 and 8 (Table \ref{tab: AIC}). We chose the latter with $\Delta$Time measured in weeks because the interaction term allowed the impact of $\Delta$Distance to vary with $\Delta$Time, and weeks generated trend estimates of the same order as inter-clinic distance measured in kilometers (Fig \ref{fig: coeff with time}). Importantly, inputs that were independent of $\Delta$Time were relatively robust to changes in the measurement of $\Delta$Time (Table \ref{tab: coef with time}), and $\beta_1$ was relatively robust to changes in model structure (Fig \ref{fig: coeff with model}). 
 
 
 ```{r}
@@ -522,7 +523,6 @@ where $\text{Year 2014}_i$ was TRUE if both parasite samples were collected in 2
 rm(list = ls())
 load('../../RData/WGS_threshold.RData')
 load('../../RData/Barcode_threshold.RData')
-source('/Users/aimeet/Documents/BroadLaptop/TM_border/Rfunctions/temporal_trends.R')
 years <- sort(unique(c(WGS$Yeari, Barcode$Yeari)))
 store <- array(dim = c(14,2), dimnames = list(1:14, c('ProbIBD_WGS', 'ProbIBD_Barcode')))
 

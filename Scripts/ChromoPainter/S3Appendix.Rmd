@@ -1,5 +1,5 @@
 ---
-title: "S3 Appendix"
+title: "S3 Text"
 header-includes:
 - \usepackage{xfrac}
 - \usepackage{bm}
@@ -11,7 +11,8 @@ bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
 
 <!-- Change figure labels -->
 \makeatletter
-\renewcommand{\fnum@figure}{Fig S3.\thefigure}
+\renewcommand{\thefigure}{\Alph{figure}}
+\renewcommand{\thetable}{\Alph{table}}
 \makeatother
 
 
@@ -24,7 +25,7 @@ knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, c
 
 Throughout this document, pairs of clinics are denoted by their abbreviated names (MLA for Maela, WPA for Wang Pha, MKK for Mae Kon Ken and MKT for Mawker Thai).
 
-We estimated clinic-averaged co-ancestries from WGS data assuming SNPs were both linked and unlinked. Linked analyses require a recombination file, specifying distances between SNPs. We used a uniform recombination rate equal to $7.4 \times 10^{-7}$ Morgans per base pair [@Miles2016], the same as that specified in hmmIBD [@Schaffner2017]. ChromoPainter essentially treats each unlinked SNP as an independent segment [@Lawson2012], increasing the number sharable segments when SNPs are considered unlinked (Fig S3.\ref{fig: WGS}). Clinic-averaged co-ancestry estimates based on linked SNPs were more anisotropic than their unlinked counterparts (top versus bottom plot, Fig S3.\ref{fig: WGS}). Anisotropy had little impact upon downstream analyses, however, which were otherwise very similar for linked and unlinked estimates (Fig S3.\ref{fig:WGS trends}). 
+We estimated clinic-averaged co-ancestries from WGS data assuming SNPs were both linked and unlinked. Linked analyses require a recombination file, specifying distances between SNPs. We used a uniform recombination rate equal to $7.4 \times 10^{-7}$ Morgans per base pair [@Miles2016], the same as that specified in hmmIBD [@Schaffner2017]. ChromoPainter essentially treats each unlinked SNP as an independent segment [@Lawson2012], increasing the number sharable segments when SNPs are considered unlinked (Fig \ref{fig: WGS}). Clinic-averaged co-ancestry estimates based on linked SNPs were more anisotropic than their unlinked counterparts (top versus bottom plot, Fig \ref{fig: WGS}). Anisotropy had little impact upon downstream analyses, however, which were otherwise very similar for linked and unlinked estimates (Fig \ref{fig:WGS trends}). 
 
 ChromoPainter was designed for dense WGS data [@Lawson2012], with typically 100,000 or more SNPs across the human genome (personal communication). Nevertheless, we tried to estimate clinic-averaged co-ancestries using barcode data. Unsurprisingly, the markers were too far separated to support a linked analysis. We therefore present results from an unlinked analysis of barcode data only. 
 
@@ -88,7 +89,6 @@ for(i in 1:2){
   axis(side=2,at=labelsaty,labels=names(sitelist),las=2,cex.axis=1) 
   mtext(line = 1, text = c('Recipient', 'Donor'), side = c(2,3), adj = c(0.65, 0.35))
   mtext(line = 0.5, side = 1, text = type[i])
-  title(main = LETTERS[1:2][i],adj = 0, cex.main = 1.5, line = 0.5)
   image.plot(1:dim(tmpmat)[2],1:dim(tmpmat)[1], t(tmpmat), xaxt = 'n', yaxt = 'n', add = TRUE)
 }
 ```
@@ -151,7 +151,6 @@ for(i in 1:2){
        col = cols[northwardspls], las = 2)
   points(y = Yvalues[southwards], x = Xvalues[southwards], 
          col = cols[southwards], pch = 16, cex = 2)
-  title(main = LETTERS[1:2][i],adj = 0, cex.main = 2, line = 0)
   
   # Legend
   legend('topright', col = unique(cols)[c(3,1,2)], bty = 'n', pch = 16, 
@@ -175,7 +174,6 @@ for(i in 1:2){
        ylab = sprintf('Clinic-averaged co-ancestry estimates (%s)', type[i]))
   points(y = Yvalues[southwards], x = X[1:6], 
          col = cols[southwards], pch = 16, cex = 2)
-  title(main = LETTERS[3:4][i],adj = 0, cex.main = 1.5, line = 0)
   
   # Legend
   legend('bottomright', col = unique(cols)[c(3,1,2)], bty = 'n', pch = 16, 
@@ -198,7 +196,6 @@ for(i in 1:2){
        ylab = sprintf('Clinic-averaged co-ancestry estimates (%s)', type[i]))
   points(y = Yvalues[southwards], x = X[1:6], 
          col = cols[southwards], pch = 16, cex = 2)
-  title(main = LETTERS[5:6][i],adj = 0, cex.main = 1.5, line = -1)
   
   # Legend
   legend('bottomright', col = unique(cols)[1:2], bty = 'n', pch = 16, 
@@ -263,13 +260,13 @@ some.colors<-MakeColorYRP()
 some.colorsEnd<-MakeColorYRP(final=c(0.2,0.2,0.2)) 
 
 ### Define our input files
-chunkfile<-"./Barcode_analysis_partialMon21Aug/Barcode_unlinked_hap.chunkcounts.out" ## chromopainter chunkcounts file
-dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T,skip=1)) # read in the pairwise chunk file 
+chunkfile<-"./Barcode_unlinked/stage2/Barcode_unlinked_tmp_mainrun.unlinked_haploid_file1_ind1-1173.chunkcounts.out" ## chromopainter chunkcounts file
+dataraw<-as.matrix(read.table(chunkfile,row.names=1,header=T)) # read in the pairwise chunk file 
 
 # Read in site data
 load('../../RData/geo_dist_info.RData') # Site information
 attach(geo_dist_info, warn.conflicts = FALSE) 
-MetaData <- read.table('./Barcode_analysis_partialMon21Aug/Barcode.ids', header = FALSE, as.is = TRUE)
+MetaData <- read.table('./Barcode.ids', header = FALSE, as.is = TRUE)
 rownames(MetaData) <- MetaData$V1
 
 # Store samples by site from North to South
@@ -359,7 +356,6 @@ plot(y = Yvalues[northwardspls], x = Xvalues[northwardspls], xlim = c(0,100),
      col = cols[northwardspls])
 points(y = Yvalues[southwards], x = Xvalues[southwards], 
        col = cols[southwards], pch = 16, cex = 2)
-title(main = 'A',adj = 0, cex.main = 1.5, line = 0)
 
 # Legend
 legend('topright', col = unique(cols)[c(3,1,2)], bty = 'n', pch = 16, 
@@ -381,7 +377,6 @@ plot(y = Yvalues[northwardspls[1:6]], x = Xvalues[northwardspls[1:6]], xlim = c(
      col = cols[northwardspls[1:6]])
 points(y = Yvalues[southwards], x = Xvalues[southwards], 
        col = cols[southwards], pch = 16, cex = 2)
-title(main = 'C',adj = 0, cex.main = 1.5, line = 0)
 
 # Annotate 
 R <- permute.univlm(x = Xvalues[1:6], y = Yvalues[1:6], nrep = 1000)
@@ -407,7 +402,6 @@ R <- cor(y = Yvalues, x = c(proportion_results$proportion[1:6,'ProbIBD_93_tail']
 
 # Annotate
 text(y = 0.08, x = 0.002, label = bquote(r == .(round(R,3))))
-title(main = 'B',adj = 0, cex.main = 1.5, line = 0)
 
 #----------------------------------------------------------------------------
 # Plot agreement between clinic-averaged co-ancestries and proportion IBD
@@ -425,7 +419,6 @@ R <- cor(y = Yvalues[1:12], x = c(proportion_results$proportion[1:6,'ProbIBD_93_
                                   proportion_results$proportion[1:6,'ProbIBD_93_tail']))
 # Annotate
 text(y = 0.07925, x = 0.0005, label = bquote(r == .(round(R,3))))
-title(main = 'D',adj = 0, cex.main = 1.5, line = 0)
 ```
 
 

@@ -1,5 +1,5 @@
 ---
-title: "S4 Appendix"
+title: "S4 Text"
 header-includes:
 - \usepackage{xfrac}
 - \usepackage{bm}
@@ -10,7 +10,8 @@ bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
 
 <!-- Change figure labels -->
 \makeatletter
-\renewcommand{\fnum@figure}{Fig S4.\thefigure}
+\renewcommand{\thefigure}{\Alph{figure}}
+\renewcommand{\thetable}{\Alph{table}}
 \makeatother
 
 ```{r setup, include=FALSE}
@@ -247,7 +248,7 @@ where $\pi_1$ and $\pi_2 = 1 - \pi_1$ are the expected fraction IBD and not IBD,
 \end{bmatrix}. \nonumber
 \end{align}
 
-In other words, when distances are sufficiently large that $e^{-k\rho d_t} \approx 0$, SNPs are effectively independent of one another. Fig S4.\ref{fig: switch} shows that for $\rho = 7.4\times 10^{-7}$ base pairs per Morgan [@Miles2016], and small numbers of generations, $k < 50$, $e^{-k\rho d_t} \neq 0$ for most distances between barcode SNPs. That is to say, barcode SNPs are dependent under hmmIBD providing $k$ is small because $\rho$ is low. 
+In other words, when distances are sufficiently large that $e^{-k\rho d_t} \approx 0$, SNPs are effectively independent of one another. Fig \ref{fig: switch} shows that for $\rho = 7.4\times 10^{-7}$ base pairs per Morgan [@Miles2016], and small numbers of generations, $k < 50$, $e^{-k\rho d_t} \neq 0$ for most distances between barcode SNPs. That is to say, barcode SNPs are dependent under hmmIBD providing $k$ is small because $\rho$ is low. 
 
 ```{r, include = TRUE, fig.cap=paste("\\label{fig: switch}The effect of inter-93 and 24 barcode SNP distances on $\\exp(-\\rho d_t k)$ given different numbers of generations, $k$."), fig.width = 7, fig.height = 7}
 
