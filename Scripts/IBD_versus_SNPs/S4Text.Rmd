@@ -39,7 +39,7 @@ names_barcode24 <- names(X1$x[1:24])
 pos_order_barcode24 <- sort(X1$ix[1:24], decreasing = FALSE, index.return = TRUE)$ix
 ```
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: barcode}93 and 24-SNP barcode positions"), fig.width = 5, fig.height = 5}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: barcode}93 and 24-SNP barcode positions over 14 \textit{P. falciparum} chromosomes."), fig.width = 5, fig.height = 5}
 #===============================================================================================
 # Plot the barcode positions mapped to 3d7 v3, 
 # which Seth mapped using sequence alignment of context 
@@ -192,7 +192,9 @@ any(WGSf$pair != WGSz24$pair)
 nrow(WGSf93)
 nrow(WGSf24) 
 ```
-```{r, include = TRUE, fig.cap=paste("\\label{fig: WGS 93 24}Comparison between $\\hat{\\pi}_{\\text{IBD}}$ based on the whole genome and 93 and 24 SNP subsets generated using 2001-2014 WGS data."), fig.width = 5, fig.height = 5}
+
+
+```{r, include = TRUE, fig.cap=paste("\\label{fig: WGS 93 24}Comparison between $\\hat{\\pi}_{\\text{IBD}}$ based on the whole genome and 93 and 24 SNP subsets generated using 2001-2014 WGS data."), fig.width = 7, fig.height = 7}
 #===============================================================================
 # Plots showing that, IBD 93 and IBD 24 against IBD WGS
 par(mfrow = c(1,2), pty = 's', mar = c(4,4,2,2), family = "serif")
@@ -287,7 +289,7 @@ for(k in c(1,5,10,50)){
 ```
 
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: zeroth}IBD proportion estimates generated hmmIBD allowing dependence and forcing independence between SNPs by varying $\\rho$."), fig.width = 5, fig.height = 5}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: zeroth}IBD proportion estimates generated under hmmIBD both allowing dependence and forcing independence between SNPs by varying $\\rho$."), fig.width = 5, fig.height = 5}
 # =============================================================
 # # Plot zeroth versus first for 93 and 24 SNP barcodes
 par(mfrow = c(1,1), pty = 'm', family = "serif")

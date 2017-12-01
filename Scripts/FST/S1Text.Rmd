@@ -138,7 +138,7 @@ apply((fst_significance['2010',,]), 1, function(x){
 colnames(Table) <- dimnames(fst_significance)[[1]]
 
 # Tabulate results
-kable(Table, caption = '\\label{tab: pvalues barcode}One-tailed Monte Carlo p-value estimates for $\\hat{F}_{ST}$ based on barcode data. For a given comparison, between clinics A and B say, estimates were based on 1000 random permutations of the clinic labels of parasite samples from clinics A and B.')
+kable(Table, caption = '\\label{tab: pvalues barcode}One-tailed Monte Carlo p-value estimates for $\\hat{F}_{ST}$ based on barcode data. For a given comparison between clinics, estimates were based on 1000 random permutations of the clinic labels of the parasite samples from said clinics.')
 ```
 
 ```{r}
@@ -257,7 +257,7 @@ text(y = Pair_wise_site_comparisons_Fst[geo_order,'Reich'],
      labels = gsub('_', ' ', geo_order), cex = 0.65, pos = c(4,2,2,2,4,2))
 ```
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: barcode plots}Estimates of $F_{ST}$ based on 2001-2010 barcode data against inter-clinic distance (km). The transformations in plots B and C are predicted to be linearly related under one and two-dimensional models of isolation by distance, respectively (Rousset 1997). The logistic transformation (plot D) was added for comparison with logistic regression of relatedness estimates. Error bars represent 95% confidence intervals based on bootstrapping SNPs over 1000 replicates."), fig.width = 6, fig.height = 6}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: barcode plots}Estimates of $F_{ST}$ based on 2001-2010 barcode data against inter-clinic distance (km). The transformations in plots I and II are predicted to be linearly related under one and two-dimensional models of isolation by distance, respectively (Rousset 1997). The logistic transformation (plot IV) was added for comparison with logit-transformed estimates based on IBD in Figure 4 of the main text. Error bars represent 95% confidence intervals based on bootstrapping SNPs over 1000 replicates."), fig.width = 6, fig.height = 6}
 # ==============================================================================
 par(mfrow = c(2,2), family = "serif", las = 2, pty = 's', mar = c(5,5,2,2))
 # ==============================================================================
@@ -268,10 +268,10 @@ par(mfrow = c(2,2), family = "serif", las = 2, pty = 's', mar = c(5,5,2,2))
 plot(NULL,
      xlim = c(10,100),
      ylim = c(-0.001,0.02), bty =  'n',
-     xlab = 'Inter-clinic distance (km)',
+     xlab = 'Inter-clinic distance',
      ylab = expression(italic(hat(F)[ST])),
      panel.first = grid()) 
-title(main = 'A', adj = 0)
+title(main = 'I', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = Pair_wise_site_comparisons_Fst_CIs[[1]][geo_order,'Reich'],
@@ -296,10 +296,10 @@ text(y = Pair_wise_site_comparisons_Fst[geo_order,'Reich'],
 plot(NULL,
      xlim = c(10,100),
      ylim = c(0,0.02), bty =  'n',
-     xlab = 'Inter-clinic distance (km)',
+     xlab = 'Inter-clinic distance',
      ylab = expression(italic(hat(F)[ST])/(1-italic(hat(F)[ST]))),
      panel.first = grid())
-title(main = 'B', adj = 0)
+title(main = 'II', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = Rousset(Pair_wise_site_comparisons_Fst_CIs[[1]][geo_order,'Reich']),
@@ -328,7 +328,7 @@ plot(NULL,
      xlab = 'Log(inter-clinic distance)',
      ylab = expression(italic(hat(F)[ST])/(1-italic(hat(F)[ST]))),
      panel.first = grid())
-title(main = 'C', adj = 0)
+title(main = 'III', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = Rousset(Pair_wise_site_comparisons_Fst_CIs[[1]][geo_order,'Reich']),
@@ -358,7 +358,7 @@ plot(NULL,
      xlab = 'Inter-clinic distance',
      ylab = expression('Log'(italic(hat(F)[ST])/(1-italic(hat(F)[ST])))),
      panel.first = grid())
-title(main = 'D', adj = 0)
+title(main = 'IV', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = logit(Pair_wise_site_comparisons_Fst_CIs[[1]][geo_order,'Reich']),
@@ -556,7 +556,7 @@ colnames(Table) <- dimnames(fst_significance)[[1]]
 Table['MKK MLA', '2014'] <- paste(Table['MKK MLA', '2014'], '†', sep = '')
 
 # Tabulate results
-kable(Table, caption = '\\label{tab: pvalues barcode}One-tailed p-values for $\\hat{F}_{ST}$ based on WGS data. $\\dagger$With the exception of the compairison between MKK and MLA in 2014, all pvalues are Monte Carlo estimates based on 1000 random permutations. The p-value for MKK and MLA in 2014 is exact, since there were fewer than 1000 possible permutations given $n_{\\text{MKK}} = 4$ parasite samples from MKK, and $n_{\\text{MLA}} = 8$ parasite samples from MLA, and so all $\\sfrac{(n_{\\text{MKK}} + n_{\\text{MLA}})!}{(n_{\\text{MKK}}! \\times n_{\\text{MLA}}!)} = 495$ possible permutations were enumerated.') 
+kable(Table, caption = '\\label{tab: pvalues barcode}One-tailed p-values for $\\hat{F}_{ST}$ based on WGS data. $\\dagger$With the exception of the compairison between MKK and MLA in 2014, all p-values are Monte Carlo estimates based on 1000 random permutations as described in Table A. The p-value for MKK and MLA in 2014 is exact, since there were fewer than 1000 possible permutations given $n_{\\text{MKK}} = 4$ parasite samples from MKK, and $n_{\\text{MLA}} = 8$ parasite samples from MLA, and so all $\\sfrac{(n_{\\text{MKK}} + n_{\\text{MLA}})!}{(n_{\\text{MKK}}! \\times n_{\\text{MLA}}!)} = 495$ possible permutations were enumerated.') 
 ```
 
 
@@ -659,7 +659,7 @@ text(y = Pair_wise_site_comparisons_Fst[1,geo_order],
      labels = gsub('_', ' ', geo_order), cex = 0.65, pos = c(4,2,2,2,4,2))
 ```
 
-```{r, include = TRUE, fig.cap=("\\label{fig: barcode plots}Estimates of $F_{ST}$ based on 2001-2014 WGS data against inter-clinic distance (km). The transformations in plots B and C are predicted to be linearly related under one and two-dimensional models of isolation by distance, respectively (Rousset 1997). The logistic transformation (plot D) was added for comparison with logistic regression of relatedness estimates. Error bars represent 95% confidence intervals based on bootstrapping SNPs over 1000 replicates."), fig.width = 6, fig.height = 6}
+```{r, include = TRUE, fig.cap=("\\label{fig: barcode plots}Estimates of $F_{ST}$ based on 2001-2014 WGS data against inter-clinic distance (km). The transformations in plots II and III are predicted to be linearly related under one and two-dimensional models of isolation by distance, respectively (Rousset 1997). The logistic transformation (plot IV) was added for comparison with logit-transformed estimates based on IBD in Figure 5 of the main text. Error bars represent 95% confidence intervals based on bootstrapping SNPs over 1000 replicates."), fig.width = 6, fig.height = 6}
 # ==============================================================================
 par(mfrow = c(2,2), family = "serif", las = 2, pty = 's', mar = c(5,5,2,2))
 # ==============================================================================
@@ -670,10 +670,10 @@ par(mfrow = c(2,2), family = "serif", las = 2, pty = 's', mar = c(5,5,2,2))
 plot(NULL,
      xlim = c(5,100),
      ylim = c(0.0,0.2), bty =  'n',
-     xlab = 'Inter-clinic distance (km)',
+     xlab = 'Inter-clinic distance',
      ylab = expression(italic(hat(F)[ST])),
      panel.first = grid())
-title(main = 'A', adj = 0)
+title(main = 'I', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = Pair_wise_site_comparisons_Fst_CIs[geo_order,1],
@@ -701,7 +701,7 @@ plot(NULL,
      xlab = 'Inter-clinic distance',
      ylab = expression(italic(hat(F)[ST])/(1-italic(hat(F)[ST]))),
      panel.first = grid())
-title(main = 'B', adj = 0)
+title(main = 'II', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = Rousset(Pair_wise_site_comparisons_Fst_CIs[geo_order,1]),
@@ -727,10 +727,10 @@ text(y = Rousset(Pair_wise_site_comparisons_Fst[1,geo_order]),
 plot(NULL,
      xlim = c(2.9,4.8),
      ylim = c(0,0.25), bty =  'n',
-     xlab = 'log(inter-clinic distance)',
+     xlab = 'Log(inter-clinic distance)',
      ylab = expression(italic(hat(F)[ST])/(1-italic(hat(F)[ST]))),
      panel.first = grid())
-title(main = 'C', adj = 0)
+title(main = 'III', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = Rousset(Pair_wise_site_comparisons_Fst_CIs[geo_order,1]),
@@ -759,7 +759,7 @@ plot(NULL,
      xlab = 'Inter-clinic distance',
      ylab = expression('Log('~italic(hat(F)[ST])/(1-italic(hat(F)[ST]))~')'),
      panel.first = grid())
-title(main = 'D', adj = 0)
+title(main = 'IV', adj = 0)
 
 # Boostrap confidence intervals
 segments(y0 = logit(Pair_wise_site_comparisons_Fst_CIs[geo_order,1]),
@@ -785,10 +785,10 @@ text(y = logit(Pair_wise_site_comparisons_Fst[1,geo_order]),
 
 ## $F_{ST}$ estimates and minor allele frequency thresholds
 
-Some multilocus $F_{ST}$ estimators are sensitive to minor allele frequencies (MAFs), especially when marker ascertainment is not based an an out group and when estimators average over many ratios, each based on a different loci [@Bhatia2013]. We estimated multilocus $F_{ST}$ using Hudson's estimator, which takes a ratio of averages, rather than an average of ratios, and so should be comparatively robust to marker ascertainment [@Bhatia2013]. Indeed, Fig \ref{fig: WGS MAF} shows that WGS-based $F_{ST}$ estimates generated using different MAF thresholds (that is to say, including only those SNPs with frequency estimates greater than the stated MAF threshold) were relatively stable. 
+Some multilocus $F_{ST}$ estimators are sensitive to minor allele frequencies (MAFs), especially when marker ascertainment is not based an an out group and when estimators average over many ratios, each based on a different locus [@Bhatia2013]. We estimated multilocus $F_{ST}$ using Hudson's estimator, which takes a ratio of averages, rather than an average of ratios, and so should be comparatively robust to marker ascertainment [@Bhatia2013]. Indeed, Fig \ref{fig: WGS MAF} shows that WGS-based $F_{ST}$ estimates generated using different MAF thresholds (that is to say, including only those SNPs with frequency estimates greater than the stated MAF threshold) were relatively stable. 
 
 
-```{r, include=TRUE, fig.cap=paste("\\label{fig: WGS MAF}Estimates of $\\hat{F}_{ST}$  based on 2001-2014 WGS data given different minor allele frequency thresholds."), fig.width=7}
+```{r, include=TRUE, fig.cap=paste("\\label{fig: WGS MAF}Estimates of $F_{ST}$  based on 2001-2014 WGS data given different minor allele frequency thresholds."), fig.width=7}
 #=====================================================================
 # Clear workspace and load required data packages
 #=====================================================================
@@ -853,9 +853,9 @@ axis(side = 1, tick = FALSE, at = thresholds, labels = paste(number_SNPs_store, 
 
 ## $F_{ST}$ estimates, sample sizes and within-clinic relatedness estimates
 
-While exploring the differences between $F_{ST}$ estimates based on barcode and WGS data, we noticed an association between estimates and sample sizes (Fig S1.\ref{fig: fst sample size}), which was surprising given that the Hudson estimator was recommended for small and unequal sample sizes [@Willing2012; @Bhatia2013]. In an attempt to remove potential confounding due to unequal sample sizes across clinics, we down-sampled both barcode and WGS data to their respective minimum per-clinic sample size. Specifically, from each clinic we drew 100 random subsets of 116 barcode parasite samples (the minimum per-clinic sample size for the barcode data), and 100 random subsets of 4 WGS parasite samples (the minimum per-clinic sample size for the WGS data), then re-estimated $F_{ST}$ for each random subset. Estimates based on down-sampled barcode data were robust, and most fell within the 95% confidence intervals of the estimates based on the non-downsampled barcode data (Fig S1.\ref{fig: fst downsample}). $F_{ST}$ estimates based on down-sampled WGS data were not robust, and most fell outside the 95% confidence intervals of the estimates based on the non-downsampled WGS data (Fig S1.\ref{fig: fst downsample}). We initially concluded, therefore, that despite using a estimator recommended for small and unequal sample sizes [@Willing2012; @Bhatia2013], we have too few WGS parasite samples to inform meaningful $F_{ST}$ estimates based on WGS data.  
+While exploring the differences between $F_{ST}$ estimates based on barcode and WGS data, we noticed an association between estimates and sample sizes (Fig \ref{fig: fst sample size}), which was surprising given that the Hudson estimator is recommended for small and unequal sample sizes [@Willing2012; @Bhatia2013]. In an attempt to remove potential confounding due to unequal sample sizes across clinics, we down-sampled both barcode and WGS data to their respective minimum per-clinic sample size. Specifically, from each clinic we drew 100 random subsets of 116 barcode parasite samples (the minimum per-clinic sample size for the barcode data), and 100 random subsets of 4 WGS parasite samples (the minimum per-clinic sample size for the WGS data), then re-estimated $F_{ST}$ for each random subset. Estimates based on down-sampled barcode data were robust, and most fell within the 95% confidence intervals of the estimates based on the non-downsampled barcode data (Fig \ref{fig: fst downsample}). $F_{ST}$ estimates based on down-sampled WGS data were not robust, and most fell outside the 95% confidence intervals of the estimates based on the non-downsampled WGS data (Fig \ref{fig: fst downsample}). We initially concluded, therefore, that despite using a estimator recommended for small and unequal sample sizes [@Willing2012; @Bhatia2013], we have too few WGS parasite samples to inform meaningful $F_{ST}$ estimates based on WGS data.  
 
-```{r, include=TRUE, fig.cap=paste("\\label{fig: fst sample size}$F_{ST}$ estimates plotted against the inverse of the corresponding minority sample size per clinic, 1/min{Clinic A sample size, Clinic B sample size}.")}
+```{r, include=TRUE, fig.cap=paste("\\label{fig: fst sample size}$F_{ST}$ estimates plotted against the inverse of the corresponding minority per-clinic sample size, 1/min{Clinic A sample size, Clinic B sample size}.")}
 rm(list = ls())
 par(mfrow = c(1,1), family = "serif", las = 2, pty = 's', mar = c(4,4,1,1))
 
@@ -935,7 +935,7 @@ segments(y0 = Fst_barcode$Pair_wise_site_comparisons_Fst_CIs[[1]][geo_order,'Rei
 
 points(y = Fst_barcode$Pair_wise_site_comparisons_Fst[geo_order,'Reich'],
        x = geo_dist_info$pairwise_site_distance$distance,
-       pch = 21, bg = 'black')
+       pch = 21, bg = 'black', cex = 0.5)
 
 # text(y = Fst_barcode$Pair_wise_site_comparisons_Fst[geo_order,'Reich'],
 #      x = geo_dist_info$pairwise_site_distance$distance,
@@ -972,24 +972,24 @@ segments(y0 = Fst_WGS$Pair_wise_site_comparisons_Fst_CIs[geo_order,'2.5%'],
 
 points(y = Fst_WGS$Pair_wise_site_comparisons_Fst[,geo_order],
        x = geo_dist_info$pairwise_site_distance$distance,
-       pch = 21, bg = 'black')
+       pch = 21, bg = 'black', cex = 0.5)
 
 # text(y = Fst_WGS$Pair_wise_site_comparisons_Fst[,geo_order],
 #      x = geo_dist_info$pairwise_site_distance$distance,
 #      labels = geo_order, cex = 0.5, pos = c(4,2,2,2,2,2))
 ```
 
-However, upon further investigation as to why results based on *P. falciparum* data from the Thai-Myanmar border might deviate from those reported in the literature, we noticed a decline in the proportion of highly related parasite sample pairs (equation \eqref{eq: R}) with sample sizes across clinics (Fig S1.\ref{fig: sample size and IBD}), which in turn was associated with $\hat{F}_{ST}$. 
+However, upon further investigation as to why results based on *P. falciparum* data from the Thai-Myanmar border might deviate from those reported in the literature, we noticed a decline in the proportion of highly related parasite sample pairs (equation \eqref{eq: R}) with sample sizes across clinics (Fig \ref{fig: sample size and IBD}), which in turn was associated with $\hat{F}_{ST}$. 
 \begin{equation}
-\hat{R} = \frac{1}{N}\sum_N  \mathbb{I}\big( \hat{\pi}_{\text{IBD}} > 0.5 \big)  \text{ where N is the number of parasite sample pairs and } \mathbb{I} \text{ is the indicator function.} \label{eq: R} 
+\hat{R} = \frac{1}{N}\sum_N  \mathbb{I}\big( \hat{\pi}_{\text{IBD}} > 0.5 \big), \label{eq: R} 
 \end{equation}
-More specifically, $\hat{F}_{ST}$ increased with dominant within-clinic $\hat{R}$ (Fig S1.\ref{fig: fst and dominant IBD}), where for clinics A and B say, 
+where $N$ is the number of parasite sample pairs, $\hat{\pi}_{\text{IBD}}$ is defined in the main text and $\mathbb{I}$ is the indicator function. More specifically, $\hat{F}_{ST}$ increased with dominant within-clinic $\hat{R}$ (Fig \ref{fig: fst and dominant IBD}), where for clinics A and B say, 
 \begin{equation}
 \text{dominant within-clinic } \hat{R} = \max\{\text{within-clinic A }\hat{R}, \text{ within-clinic B } \hat{R}\}. 
 \end{equation}
-WGS inter-clinic $\hat{R}$ were also associated with dominant within-clinic $\hat{R}$ (right-hand plot Fig S1.\ref{fig: inter and intra clinic}), although not as markedly as $\hat{F}_{ST}$. $F_{ST}$ estimates were not strongly associated with inter-clinic $\hat{R}$, however (Fig S1.\ref{fig: fst and inter-clinic}). 
+WGS inter-clinic $\hat{R}$ were also associated with dominant within-clinic $\hat{R}$ (right-hand plot Fig \ref{fig: inter and intra clinic}), although not as markedly as $\hat{F}_{ST}$. $F_{ST}$ estimates were not strongly associated with inter-clinic $\hat{R}$ (Fig \ref{fig: fst and inter-clinic}). 
 
-These observations were based on very few single point estimates. Nevertheless, an association between $F_{ST}$ and dominant within-clinic relatedness is not unexpected given the definition $F_{ST}$, which can be expressed as a normalised measure of genetic variation between populations [@Nei1973]. We therefore conclude that the capacity to detect spatial trends in the data from the Thai-Myanmar border using $\hat{F}_{ST}$ is potentially overwhelmed by within-clinic relatedness, which increased with decreasing WGS per-clinic sample size, likely due to decreased transmission [@Nkhoma2013; @Carrara2013], rendering WGS-based $\hat{F}_{ST}$ unstable (Fig S1.\ref{fig: fst downsample}). 
+These observations were based on very few point estimates. Nevertheless, an association between $F_{ST}$ and dominant within-clinic $\hat{R}$ is not unexpected given the definition $F_{ST}$, which can be expressed as a normalized measure of genetic variation between populations [@Nei1973]. We therefore conclude that the capacity to detect spatial trends in the data from the Thai-Myanmar border using $\hat{F}_{ST}$ is potentially overwhelmed by within-clinic relatedness, which increased with decreasing WGS per-clinic sample size, likely due to decreased transmission [@Nkhoma2013; @Carrara2013], rendering WGS-based $\hat{F}_{ST}$ unstable (Fig \ref{fig: fst downsample}). 
 
 
 ```{r}
@@ -1036,7 +1036,7 @@ intras_geo_order_Barcode_IBD <- cbind(Barcode_IBD[intras_geo_order[1,]],
                                       Barcode_IBD[intras_geo_order[2,]])
 ```
 
-```{r, include = TRUE, fig.width=7, fig.cap=paste("\\label{fig: sample size and IBD}Within-clinic $\\hat{R}$ against sample size per clinic. The plot on the left is based on barcode data. The plot on the right is based on WGS data.")}
+```{r, include = TRUE, fig.width=7, fig.cap=paste("\\label{fig: sample size and IBD}Within-clinic $\\hat{R}$ against per-clinic sample size. The plot on the left is based on barcode data. The plot on the right is based on WGS data.")}
 #============================================================================
 # Plots sample size against inter-clinic fraction highly related
 par(mfrow = c(1,2), family = "serif", las = 2, pty = 's', mar = c(4,5,1,1))

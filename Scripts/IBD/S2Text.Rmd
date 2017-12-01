@@ -1,4 +1,4 @@
----
+=---
 title: "S2 Text"
 header-includes:
 - \usepackage{xfrac}
@@ -29,14 +29,17 @@ library(arm) # invlogit
 library(Hmisc) # cut2
 ```
 
+# Trends in relatedness
+
+In this section we briefly describe preliminary analyses on which the structures of the temporally unadjusted and adjusted logistic regression models of highly related parasite sample pairs were based. The analyses were performed using barcode data since they were most comprehensively sampled. 
 
 ## Motivation for regressing highly related parasite sample pairs onto distance
 
-Empirical density plots (Fig \ref{fig:histMLA} to \ref{fig:histMLA_MKT}) suggest that $\hat{\pi}_{\text{IBD}}$ for pairs of parasite samples within and across clinics loosely follow a mixture distribution over three classes: 1) near zero $\hat{\pi}_{\text{IBD}}$ shown in green; 2) low to intermediate $\hat{\pi}_{\text{IBD}}$ shown in shades of blue; and 3) high $\hat{\pi}_{\text{IBD}}$, which notably rarefies with distance, and is coloured red if sufficiently dense to be visible, and otherwise outlined in black. 
+Empirical density plots (Fig \ref{fig:histMLA} to \ref{fig:histMLA_MKT}) suggest that $\hat{\pi}_{\text{IBD}}$ for pairs of parasite samples within and across clinics loosely follow a mixture distribution over three classes: 1) near zero $\hat{\pi}_{\text{IBD}}$ shown in green; 2) low to intermediate $\hat{\pi}_{\text{IBD}}$ shown in shades of blue; and 3) high $\hat{\pi}_{\text{IBD}}$, which notably rarefies with distance, and is colored red if sufficiently dense to be visible, and otherwise outlined in black. 
 
-We interpreted near zero $\hat{\pi}_{\text{IBD}}$ as comparisons between parasites whose relatives were either not sampled or where barcode SNPs were to few to resolve IBD; low to intermediate $\hat{\pi}_{\text{IBD}}$ as comparisons between panmictically mixing parasites; and high $\hat{\pi}_{\text{IBD}}$ as comparisons including recent parasite migrants.
+We interpreted near zero $\hat{\pi}_{\text{IBD}}$ as comparisons between parasites whose relatives were either not sampled or where barcode SNPs were to few to resolve IBD; low to intermediate $\hat{\pi}_{\text{IBD}}$ as comparisons between panmictically mixing parasites; and high $\hat{\pi}_{\text{IBD}}$ as comparisons including recent parasite migrants between clinics.
 
-To distinguish recent migrants, we selected a threshold equal to 0.5 (dotted vertical lines, Fig \ref{fig:histMLA} to \ref{fig:histMLA_MKT}), labeling all comparisons above the threshold highly related. We then constructed logistic regression models, as outlined below, to quantify distance as a correlate of the probability of a comparison being highly related.
+To distinguish recent migrants, we selected a threshold equal to 0.5 (dotted vertical lines, Fig \ref{fig:histMLA} to \ref{fig:histMLA_MKT}), classing all comparisons above the threshold highly related. We then constructed logistic regression models, as outlined below, to quantify distance as a correlate of the probability of a comparison being classed highly related.
 
 ```{r}
 #====================================================================================
@@ -48,13 +51,13 @@ load('../../RData/geo_dist_info.RData')
 site_comparisons <- sort(geo_dist_info$pairwise_site_distance_all)[c(1:4,seq(5,16,2))]
 ```
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig:histMLA}Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Maela")}
+```{r, include = TRUE, fig.cap=paste("\\label{fig:histMLA}Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Maela.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[1]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -62,13 +65,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Wang Pha")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Wang Pha.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[2]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2, 
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95))) 
@@ -76,13 +79,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Mae Kon Ken")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Mae Kon Ken.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[3]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -90,13 +93,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Mawker Thai")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons within Mawker Thai.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[4]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -104,13 +107,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Mae Kon Ken and Wang Pha")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Mae Kon Ken and Wang Pha.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[5]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -118,13 +121,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Mae Kon Ken and Mawker Thai")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Mae Kon Ken and Mawker Thai.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[6]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -132,13 +135,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Maela and Wang Pha")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Maela and Wang Pha.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[7]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -146,13 +149,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Mawker Thai and Wang Pha")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Mawker Thai and Wang Pha.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[8]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -160,13 +163,13 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Maela and Mae Kon Ken")}
+```{r, include = TRUE, fig.cap=paste("Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Maela and Mae Kon Ken.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[9]
 ind <- Barcode$Site_comparison == site_comparison
 X <- hist(Barcode[ind,'ProbIBD_93'], breaks = 100, plot = FALSE)
 gap.barplot(y = X$density, gap=c(9,50), # Range to be left out
-            main = bquote(Delta ~'Distance (km)' == .(site_comparisons[site_comparison])), 
+            main = bquote(Delta ~'Distance (km)' == .(round(site_comparisons[site_comparison]))), 
             xaxt = 'n', ylab = 'Density', xlab = expression(hat(pi)[IBD]), 
             ytics = c(1,4,51,round(max(X$density)),0), las = 2,
             col = c(rainbow(1, start = 0.40), rainbow(101, start = 0.55, end = 0.95)))
@@ -174,7 +177,7 @@ abline(v = 50, lty = 'dotted')
 axis(side = 1, line = 0, at = seq(0,100,25), labels = seq(0,1,0.25))
 ```
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig:histMLA_MKT}Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Maela and Mawker Thai")}
+```{r, include = TRUE, fig.cap=paste("\\label{fig:histMLA_MKT}Density of $\\hat{\\pi}_{\\text{IBD}}$ for comparisons across Maela and Mawker Thai.")}
 par(mfrow = c(1,1), pty = 'm', family = "serif", mar = c(4,4,3,3))
 site_comparison <- names(site_comparisons)[10]
 ind <- Barcode$Site_comparison == site_comparison
@@ -265,7 +268,7 @@ For $i = 1, \ldots, n$ parasite sample comparisons, the logistic model can be re
 \end{cases}
 \end{equation}
 
-where $z_i$ is a continuous, unobserved outcome [@Gelman2007]. To quantify temporally unadjusted trends in relatedness with distance, the following two models were compared using the Akaike information criterion (AIC), a model comparison score that is penalised by model complexity and favors comparatively low values [@Akaike1998].  
+where $z_i$ is a continuous, unobserved outcome [@Gelman2007]. To quantify temporally unadjusted trends in relatedness with distance, the following two models were compared using the Akaike information criterion (AIC), a model comparison score that is penalized by model complexity and favors comparatively low values [@Akaike1998].  
 
 \small
 \begin{align}
@@ -274,7 +277,7 @@ where $z_i$ is a continuous, unobserved outcome [@Gelman2007]. To quantify tempo
 \end{align}
 \normalsize
 
-where $\epsilon_i$ is assumed to have a logistic probability distribution, and clinic predictors (Maela, Wang Pha, Mae Kon Ken and Mawker Thai) are equal to TRUE if both parasite samples in comparison $i$ were collected from said clinic, and FALSE otherwise. That is to say, the clinic predictors account for inter-clinic variance at $\Delta\text{Distance}_i = 0$, but do not vary with $\Delta\text{Distance}_i > 0$. The inclusion of the clinic predictors resulted in a $`r reduction`$ decrease in AIC from $`r AIC0`$ to $`r AIC1`$, while $\beta_1$ under models 1 and 2 remained comparatively stable ($`r dist0`$ and $`r dist1`$ respectively). We therefore chose model 2 to assess temporally unadjusted spatial trends. 
+where $\epsilon_i$ is assumed to have a logistic probability distribution, and clinic predictors (Maela, Wang Pha, Mae Kon Ken and Mawker Thai) are equal to TRUE if both parasite samples in comparison $i$ were collected from said clinic, and FALSE otherwise. That is to say, the clinic predictors account for inter-clinic variance at $\Delta\text{Distance}_i = 0$, but do not vary with $\Delta\text{Distance}_i > 0$. The inclusion of the clinic predictors resulted in a decrease in AIC from $`r AIC0`$ to $`r AIC1`$, while $\beta_1$ under models 1 and 2 remained comparatively stable ($`r dist0`$ and $`r dist1`$ respectively). We therefore chose model 2 to assess temporally unadjusted spatial trends. 
 
 
 ```{r}
@@ -282,7 +285,7 @@ where $\epsilon_i$ is assumed to have a logistic probability distribution, and c
 # Binned residuals
 # Residuals should show no trend and fall within there 95\% confidence intervals (non-zero dotted lines). We used binned residuals and AIC to investigate model fit (predictive error rate is inappropriate given P(y = 1) so small, and the "likelihood-ratio test is valid only for nested models, whereas AIC (and AICc) has no such restriction" [WIKI]). 
 #===========================================================
-par(mfrow = c(1,2), pty = 's')
+par(mfrow = c(1,2), pty = 's', family = "serif")
 binned_residuals(bin_by = invlogit(fit1$linear.predictors), 
                  fitted = invlogit(fit1$linear.predictors),
                  y = Data$ProbIBD_93_tail[!is.na(Data$ProbIBD_93_tail)], 
@@ -295,9 +298,7 @@ binned_residuals(bin_by = invlogit(fit2$linear.predictors),
 ```
 
 
-## Building a temporally adjusted logistic regression model for relatedness
-
-In this section we briefly describe preliminary analyses on which the structures of the temporally unadjusted and adjusted logistic regression models of highly related parasite sample pairs were based. The analyses were performed using barcode data since they were most comprehensively sampled. 
+## Temporally adjusted logistic regression model 
 
 To quantify temporally adjusted trends in relatedness with distance, the following eight models with temporal predictors were compared. 
 
@@ -332,7 +333,7 @@ for(i in 1:length(Time_models)){
   if(i == 2){Data$diff_time <- round(as.numeric(Data$time_dist, units = "weeks"),0)} 
   if(i == 3){Data$diff_time <- abs(elapsed_months(Data$Collection_datei, Data$Collection_datej))}
   if(i == 4){Data$diff_time <- abs(Data$Yeari - Data$Yearj)} # Years 
-
+  
   # Models
   fit3 <- speedglm('ProbIBD_93_tail ~ geo_dist + WPA + MKT + MLA + MKK + diff_time',
                    data = Data, family = binomial(logit), na.action = na.exclude, fitted = TRUE)
@@ -364,12 +365,13 @@ for(i in 1:length(Time_models)){
 ```{r, include = TRUE, fig.cap=paste("\\label{fig: AIC}AIC scores for models 3 to 10 fit to barcode data (the lowest score per time interval is circled). ")}
 #====================================================================================
 # AIC plot
+par(family = "serif")
 #====================================================================================
 Ylim <- range(sapply(Time_models, function(x){lapply(x, function(z){z$aic})}))
 Xmax <- length(Time_models[[1]])
 plot(NULL, xlim = c(1, Xmax), ylim = Ylim, bty = 'n', ylab = 'AIC', xlab = 'Model', xaxt = 'n')
 axis(side = 1, at = 1:8, labels = 3:10)
-legend('topright', pt.bg = 1:4, pch = 21, legend = names(Time_models)[-5], bty = 'n')
+legend('right', pt.bg = 1:4, pch = 21, legend = names(Time_models)[-5], bty = 'n', cex = 0.7)
 
 for(i in 1:4){
   fits <- Time_models[[i]]
@@ -382,6 +384,7 @@ for(i in 1:4){
 ```{r, include = TRUE, fig.cap=paste("\\label{fig: coeff with time}Spatial and temporal trend estimates generated under model 8 fit to barcode data.")}
 #====================================================================================
 # Plot of spatial and temporal coeff with different measures of time
+par(family = "serif")
 #====================================================================================
 # Extract coefs
 X0 <- summary(Time_models[[1]][[6]])
@@ -435,7 +438,7 @@ kable(round(coeff_store[c(1,6,2:5,8,7,9,10),-5], 3), caption = '\\label{tab: coe
 # Binned residuals for temporal models
 #====================================================================================
 # with respect to fitted values under chosen model 
-par(mfrow = c(2,2))
+par(mfrow = c(2,2), family = "serif")
 for(i in 1:4){
   fit6 <- Time_models[[i]][[6]]
   binned_residuals(bin_by = invlogit(fit6$linear.predictors), 
@@ -446,7 +449,7 @@ for(i in 1:4){
 }
 
 # with respect to interclinic distance under chosen model 
-par(mfrow = c(2,2))
+par(mfrow = c(2,2), family = "serif")
 for(i in 1:4){
   fit6 <- Time_models[[i]][[6]]
   binned_residuals(bin_by = Data$geo_dist[!is.na(Data$ProbIBD_93_tail)],
@@ -458,7 +461,7 @@ for(i in 1:4){
 }
 
 #  with respect to $\Delta\text{time}$ under chosen model:
-par(mfrow = c(2,2))
+par(mfrow = c(2,2), family = "serif")
 for(i in 1:4){
   fit6 <- Time_models[[i]][[6]]
   binned_residuals(bin_by = Data$diff_time[!is.na(Data$ProbIBD_93_tail)],
@@ -473,9 +476,10 @@ for(i in 1:4){
 <!-- Hack to ensure Fig 13 doesn't fall off the page -->
 \pagebreak 
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: coeff with model}Spatial trends under models 1 to 10 with time measured in weeks")}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: coeff with model}Spatial trend estimates, $\\hat{\\beta}_1$ under models 1 to 10 with time measured in weeks.")}
 #====================================================================================
 # Spatial trend estimates with model structure
+par(family = "serif")
 #====================================================================================
 weekfits <- Time_models[[2]] # We only want weeks
 weekfits[[9]] <- fit1
@@ -484,13 +488,13 @@ beta1s <- sapply(weekfits[c(9,10,1:8)],
                  function(x){x$coefficients['geo_dist']})
 plot(y = beta1s, x = 1:10, ylim = c(-0.1, 0.1), bty = 'n', xaxt = 'n',
      xlab = 'Model', bg = 'gray', pch = 21,
-     ylab = expression(beta[1]))
+     ylab = expression(beta[1] ~ 'estimate'))
 axis(side = 1, at = 1:10)
 abline(h = mean(beta1s), lty = 'dotted')
 ```
 
 
-## Temporally adjusted model with additional year 2008 predictor for WGS data
+## Temporally adjusted model with additional year 2014 predictor for WGS data
 
 ```{r}
 #===============================================================================
@@ -514,13 +518,14 @@ Temporally unadjusted and adjusted models 2 and 8, respectively, were chosen usi
 \text{11) }z_i = \ldots +  &\beta_6 \Delta\text{Time}_i + \beta_7 \Delta\text{Distance}_i \times \Delta\text{Time}_i + \beta_8 \text{Season}_i + \beta_9 \text{Season}_i \times \Delta\text{Time}_i + \text{Year 2014}_i + \epsilon_i, \nonumber 
 \end{align}
 
-where $\text{Year 2014}_i$ was TRUE if both parasite samples were collected in 2014 and false otherwise, thereby accounting for a large increase in $\hat{\pi}_{\text{IBD}}$ in 2014 (Fig S2.\ref{fig: 2014 IBD}), and resulting in a decrease in AIC of $`r reduction`$ compared with model 8. 
+where $\text{Year 2014}_i$ was TRUE if both parasite samples were collected in 2014 and false otherwise, thereby accounting for a large increase in $\hat{\pi}_{\text{IBD}}$ in 2014 (Fig \ref{fig: 2014 IBD}), and resulting in a decrease in AIC of $`r reduction`$ compared with model 8. 
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: 2014 IBD}Fraction of parasite sample pairs with $\\hat{\\pi}_{\\text{IBD}}$ > 0.5 over time")}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: 2014 IBD}Fraction of highly related parasite sample pairs (pairs with $\\hat{\\pi}_{\\text{IBD}}$ > 0.5) over time")}
 #===============================================================================
 # Plot of fraction of proportion IBD > 0.5 with time
 #===============================================================================
 rm(list = ls())
+par(family = "serif")
 load('../../RData/WGS_threshold.RData')
 load('../../RData/Barcode_threshold.RData')
 years <- sort(unique(c(WGS$Yeari, Barcode$Yeari)))
@@ -573,7 +578,7 @@ X <- pairwise_site_distance_all[names(Y)]
 bootstrapCIs <- cbind(Y,Y)-t(deltaCIs[,names(Y),'ProbIBD_93_tail'])
 ```
 
-```{r barcode_proportions_distance, fig.height=6, fig.width=6, include = TRUE, fig.cap=paste("\\label{fig: prop related barcode}Proportions of highly related 2001-2014 barcode parasite sample pairs with respect to inter-clinic distance. Annotations refer to site comparisons using abbreviated clinic names (MLA for Maela, 212 parasite samples; WPA for Wang Pha 457 parasite samples; MKK for Mae Kon Ken 116 parasite samples; and MKT for Mawker Thai, 388 parasite samples). All parasite samples were single-infection. For clinic pair A and B say, the proportion was based on $n_A \\times n_B$ parasite samples, where $n$ denotes the number of parasite samples per clinic. Error bars represent 95% confidence intervals based on bootstrapping over highly related parasite sample pair labels.")}
+```{r barcode_proportions_distance, fig.height=6, fig.width=6, include = TRUE, fig.cap=paste("\\label{fig: prop related barcode}Proportions of highly related 2001-2014 barcode parasite sample pairs with respect to inter-clinic distance. Annotations refer to site comparisons using abbreviated clinic names (MLA for Maela, 212 parasite samples; WPA for Wang Pha, 457 parasite samples; MKK for Mae Kon Ken, 116 parasite samples; and MKT for Mawker Thai, 388 parasite samples). All parasite samples were single-infection. For clinic pair A and B say, the proportion was based on $n_A \\times n_B$ parasite samples, where $n$ denotes the number of parasite samples per clinic. Error bars represent 95% confidence intervals based on bootstrapping over the clinic labels of highly related parasite sample pairs.")}
 #=======================================================================
 # Plot untransformed proportions of highly related barcode parasite samples pairs
 par(mfrow = c(1,1), pty = 's', family = "serif", mar = c(4,4,3,3))
@@ -628,7 +633,7 @@ X <- pairwise_site_distance_all[names(Y)]
 bootstrapCIs <- cbind(Y,Y)-t(deltaCIs[,names(Y),'ProbIBD_tail'])
 ```
 
-```{r WGS_proportions_distance, fig.height=6, fig.width=6, include = TRUE, fig.cap=paste("\\label{fig: prop related barcode} Proportions of highly related WGS parasite sample pairs plotted with respect to inter-clinic distance. Annotations refer to site comparisons using abbreviated clinic names (MLA for Maela, 55 parasite samples; WPA for Wang Pha, 103 parasite samples; MKK for Mae Kon Ken 4 parasite samples; and MKT for Mawker Thai, 16 parasite samples). All parasite samples were single-infection. For clinic pair A and B say, the proportion was based on nA × nB parasite samples, where n denotes the number of parasite samples per clinic. Error bars represent 95% confidence intervals based on bootstrapping over highly related parasite sample pair labels.")}
+```{r WGS_proportions_distance, fig.height=6, fig.width=6, include = TRUE, fig.cap=paste("\\label{fig: prop related barcode} Proportions of highly related WGS parasite sample pairs plotted with respect to inter-clinic distance. Annotations refer to site comparisons using abbreviated clinic names (MLA for Maela, 55 parasite samples; WPA for Wang Pha, 103 parasite samples; MKK for Mae Kon Ken, 4 parasite samples; and MKT for Mawker Thai, 16 parasite samples). All parasite samples were single-infection. For clinic pair A and B say, the proportion was based on $n_A \\times n_B$ parasite samples, where $n$ denotes the number of parasite samples per clinic. Error bars represent 95% confidence intervals based on bootstrapping over the clinic labels of highly related parasite sample pairs.")}
 #=======================================================================
 # Plot untransformed proportions of highly related WGS parasite samples pairs
 par(mfrow = c(1,1), pty = 's', family = "serif", mar = c(4,4,3,3))
@@ -709,9 +714,9 @@ Table <- array(dim = c(length(beta_names), 8), dimnames = list(beta_names, NULL)
 colnames(Table) <- apply(cbind(rep(year_names, each = 2), rep(formula_names, 4)), 1, paste, collapse = '')
 
 for(year in year_names){
-for(formula_name in formula_names){
-  colname <- paste(year, formula_name, sep = '')
-  Table[,colname] <- apply(Store[, formula_name, year, ], 1, function(x){sprintf('%s (%s)', sig3(x[1]), fmt3(x[2]))})
+  for(formula_name in formula_names){
+    colname <- paste(year, formula_name, sep = '')
+    Table[,colname] <- apply(Store[, formula_name, year, ], 1, function(x){sprintf('%s (%s)', sig3(x[1]), fmt3(x[2]))})
   }
 }
 kable(Table)
@@ -732,7 +737,7 @@ formula_names <- c('unadjusted','adjusted','adjustedyear')
 
 Store <- array(dim = c(length(beta_names), length(formula_names), length(year_names), 2), 
                dimnames = list(beta_names,formula_names,year_names,c('obs', 'pval')))
-    
+
 # Extract results             
 for(formula_name in formula_names){
   load(sprintf('../../RData/GLM_WGS_%s.RData', formula_name))
@@ -748,9 +753,9 @@ Table <- array(dim = c(length(beta_names), 6), dimnames = list(beta_names, NULL)
 colnames(Table) <- apply(cbind(rep(year_names, each = 3), rep(formula_names, 2)), 1, paste, collapse = '')
 
 for(year in year_names){
-for(formula_name in formula_names){
-  colname <- paste(year, formula_name, sep = '')
-  Table[,colname] <- apply(Store[, formula_name, year, ], 1, function(x){sprintf('%s (%s)', sig3(x[1]), fmt3(x[2]))})
+  for(formula_name in formula_names){
+    colname <- paste(year, formula_name, sep = '')
+    Table[,colname] <- apply(Store[, formula_name, year, ], 1, function(x){sprintf('%s (%s)', sig3(x[1]), fmt3(x[2]))})
   }
 }
 
@@ -799,25 +804,25 @@ for(year in year_names){
 
 # Make techy names pretty ****Check order*** Also not, cannot use expressions with kable - use unicode instead
 rownames(Table) <- c('Intercept', 'Delta Distance (km)',
-                           'Maela', 'Wang Pha', 'Mae Kon Ken', 'Mawker Thai', 'Season', 
-                           'Delta weeks', 'Delta weeks x Season', 'Delta weeks x Delta Distance') 
+                     'Maela', 'Wang Pha', 'Mae Kon Ken', 'Mawker Thai', 'Season', 
+                     'Delta weeks', 'Delta weeks x Season', 'Delta weeks x Delta Distance') 
 colnames(Table) <- c('unadjusted', 'adjusted',
                      'unadjusted', 'adjusted',
                      'unadjusted', 'adjusted',
                      'unadjusted', 'adjusted')
 
 
-kable(Table, format = 'latex', booktabs = T, caption = 'Trends in highly related barcode parasite sample pairs, excluding repeat barcodes within clinics. There were 18 repeat barcodes in Maela, 125 in Wang Pha, 28 in Mae Kon Ken, and 79 in Mawker Thai. Regression coefficient estimates unadjusted and adjusted refer to estimates before and after adjustment for temporal inputs, Season, $\\Delta$Week, $\\Delta$Week × Season and $\\Delta$Weeks × $\\Delta$Distance, respectively. P-values are two-tailed Monte Carlo estimates based on 1000 perturbations of highly related parasite sample pair labels (equal to 1 if $\\hat{\\pi}_{\\text{IBD}}$ and 0 otherwise).')  %>% column_spec(1:9, width = c("6.1em", rep("4.4em", 8))) %>% add_header_above(c(" ", "Year 2001-2014" = 2, "Year 2008" = 2, "Year 2009" = 2, "Year 2010" = 2)) %>%
-kable_styling(font_size = 6)
+kable(Table, format = 'latex', booktabs = T, caption = 'Trends in highly related barcode parasite sample pairs, excluding repeat barcodes within clinics. There were 18 repeat barcodes in Maela, 125 in Wang Pha, 28 in Mae Kon Ken, and 79 in Mawker Thai. Regression coefficient estimates unadjusted and adjusted refer to estimates before and after adjustment for temporal inputs, Season, $\\Delta$Week, $\\Delta$Week × Season and $\\Delta$Weeks × $\\Delta$Distance, respectively. P-values are two-tailed Monte Carlo estimates based on 1000 permutations of highly related parasite sample pair labels (equal to 1 if $\\hat{\\pi}_{\\text{IBD}}$ > 0.5 and 0 otherwise).')  %>% column_spec(1:9, width = c("6.1em", rep("4.4em", 8))) %>% add_header_above(c(" ", "Year 2001-2014" = 2, "Year 2008" = 2, "Year 2009" = 2, "Year 2010" = 2)) %>%
+  kable_styling(font_size = 6)
 ```
 
 \pagebreak
 
-# Sensitivity of spatial trends to the threshold used to label highly related parasite sample pairs
+# Sensitivity of spatial trends to the threshold used to classify highly related parasite sample pairs
 
-Sensitivity to thresholds was assessed by translation of the specified thresholds. Specifically, for eight translated thresholds ranging from the specified threshold of 0.5 ± 0.3, we re-estimated temporally adjusted spatial trend estimates. Two-tailed Monte Carlo p-values were based on 100 permutations of binary outcomes (equal to one if $\hat{\pi}_{\text{IBD}} > 0.5$, and zero otherwise). Since significant negative trends were recovered for WGS data only when the increase in IBD in 2014 was accounted for (Table 3 main text), we used the temporally adjusted model with the year predictor to explore sensitivity using WGS data. 
+Sensitivity to the threshold used to classify highly related sample pairs was assessed by translation of the specified threshold of 0.5. Specifically, for eight translated thresholds ranging from the specified threshold of 0.5 ± 0.3, we re-estimated temporally adjusted spatial trend estimates. Two-tailed Monte Carlo p-values were based on 100 permutations of binary outcomes (equal to one if $\hat{\pi}_{\text{IBD}} > 0.5$, and zero otherwise). Since significant negative trends were recovered for WGS data only when the increase in IBD in 2014 was accounted for (Table 3 main text), we used the temporally adjusted model with the year 2014 predictor to explore sensitivity using WGS data. 
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: threshold beta}Threshold sensitivity of the spatial trend estimates based on barcode and WGS data. The plots on the left show the relatedness thresholds (solid vertical lines) and their translations (dashed vertical lines) in relation to the empirical distribution of $\\hat{\\pi}_{\\text{IBD}}$ based on barcode data (top) and WGS data (bottom). The plots in the middle and on the right show $\\Delta$Distance trend estimates with respect to the relatedness thresholds and their translations. The trend estimate corresponding to the chosen thresholds are circled."), fig.width=8}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: threshold beta}Threshold sensitivity of the spatial trend estimates based on barcode and WGS data. The plots on the left show the relatedness thresholds (solid vertical lines) and their translations (dashed vertical lines) in relation to the empirical distribution of $\\hat{\\pi}_{\\text{IBD}}$ based on barcode data (top) and WGS data (bottom). The plots in the middle and on the right show $\\Delta$Distance trend estimates with respect to the relatedness thresholds and their translations. The trend estimates corresponding to the chosen threshold of 0.5 are circled."), fig.width=8}
 
 #===========================================================================
 # Sensitivity to threshold translations 
@@ -901,7 +906,7 @@ for(name in names(sensitivity_results)[3]){
 
 ## Models based directly on $\hat{\pi}_{\text{IBD}}$
 
-Thus far we have considered spatial trends in the $\mathbb{P}(\hat{\pi}_{\text{IBD}_i} > 0.5)$ (see Tables 2 and 3 of the main manuscript for regression coefficient estimates) because empirical density plots suggested $\hat{\pi}_{\text{IBD}}$ were loosely distributed according to different classes, with perceived recent migrants having high $\hat{\pi}_{\text{IBD}}$ (Fig S2.\ref{fig:histMLA} to S2.\ref{fig:histMLA_MKT}). Alternatively, we could regress $\hat{\pi}_{\text{IBD}}$ directly onto distance by letting $z_i = \hat{\pi}_{\text{IBD}_i}$. Under chosen models 2 and 8 (and 11 for WGS data) with $z_i = \hat{\pi}_{\text{IBD}_i}$, the spatial trend estimates were mostly negative, though very small, and those that are significant in Tables 2 and 3 of the main manuscript are similarly significant here (Table \ref{tab: direct reg}). 
+Thus far we have considered spatial trends in the $\mathbb{P}(\hat{\pi}_{\text{IBD}_i} > 0.5)$ (see Tables 2 and 3 of the main manuscript for regression coefficient estimates) because empirical density plots suggested $\hat{\pi}_{\text{IBD}}$ were loosely distributed according to different classes, with perceived recent migrants having high $\hat{\pi}_{\text{IBD}}$ (Fig \ref{fig:histMLA} to S2.\ref{fig:histMLA_MKT}). Alternatively, we could regress $\hat{\pi}_{\text{IBD}}$ directly onto distance by letting $z_i = \hat{\pi}_{\text{IBD}_i}$. Under chosen models 2 and 8 (and 11 for WGS data) with $z_i = \hat{\pi}_{\text{IBD}_i}$, the spatial trend estimates were mostly negative, though very small, and those that are significant in Tables 2 and 3 of the main manuscript are similarly significant here (Table \ref{tab: direct reg}). 
 
 \scriptsize
 
@@ -1037,8 +1042,8 @@ betas[names(beta_SNP24), '24SNP'] <- beta_SNP24
 # Attrition plots and estimates without d
 xinv <- function(p){(log(p/(1-p), base = b) + a)/c}
 requirements_store1 <- array(dim = c(3, 3), 
-                            dimnames = list(colnames(num_datasets), 
-                                            c('c', 'r', '95%')))
+                             dimnames = list(colnames(num_datasets), 
+                                             c('c', 'r', '95%')))
 #========================================================================
 par(mfrow = c(1,1), mar = c(5,5,1,1), pty = 's', family = "serif")
 cols <- c('gray', 'blue', 'black')
@@ -1052,7 +1057,7 @@ num_successfull_datasets <- list()
 abline(h = 0.95, lty = 'dashed')
 
 for(i in 1:3){
-  X <- as.numeric(rownames(signifneg_results[-1,]))
+  X <- as.numeric(rownames(signifneg_results[-1,])) # Remove 25 as too few 
   Y <- signifneg_results[-1,i]
   null <- 0.025; # Because two-sided p-values
   abline(h = null, lty = 'dotted')
@@ -1069,37 +1074,35 @@ for(i in 1:3){
 kable(requirements_store1)
 ```
 
-```{r Attrition_plot_unnstrained}
+```{r Attrition_plot_unconstrained}
 #========================================================================
 # Attrition plots with d
 xinv <- function(p){(log((d*p)/(1-p), base = b) + a)/c}
 requirements_store2 <- array(dim = c(3, 4), 
-                            dimnames = list(colnames(num_datasets), 
-                                            c('c', 'd', 'r', '95%')))
+                             dimnames = list(colnames(num_datasets), 
+                                             c('c', 'd', 'r', '95%')))
 #========================================================================
+
+# Remove 25 since too few points and add some plots to anchor: 
+null <- 0.025; # Because two-sided p-values
+anchorlength <- 2
+signifneg_results_anchored = rbind(matrix(null, ncol = 3, nrow = anchorlength), signifneg_results[-1, ]) 
+rownames(signifneg_results_anchored)[1:anchorlength] <- rep('0', anchorlength)
+
 par(mfrow = c(1,1), mar = c(5,5,1,1), pty = 's', family = "serif")
 cols <- c('gray', 'blue', 'black')
 max_sample_size <- 1200
-plot(NULL, xlim = c(0,max_sample_size), ylim = c(0,1), bty = 'n',
+plot(NULL, xlim = c(0,max_sample_size), ylim = c(0,1), bty = 'n', panel.first = grid(), 
      xlab = 'Subset size (samples)',
-     ylab = expression('Proportion of significant negative' ~ beta ~ 'values'))
+     ylab = expression('Proportion of significant negative' ~ beta ~ 'values'), cex = 0.75)
 legend(y = 0.3, x = 400, legend = c('WGS (34911 SNPs)', '93-SNP barcode', '24-SNP barcode'), pt.bg = 1:3,
        lty = 'solid', pch = 16, bty = 'n', y.intersp = 1.2, col = c('gray', 'blue', 'black'), lwd = 2, cex = 0.8)
 num_successfull_datasets <- list()
 abline(h = 0.95, lty = 'dashed')
 
-# Remove 25 since too few points
-signifneg_results <- signifneg_results[-1, ]
-
-# Add some plots to anchor: 
-null <- 0.025; # Because two-sided p-values
-anchorlength <- 2
-signifneg_results = rbind(matrix(null, ncol = 3, nrow = anchorlength), signifneg_results) 
-rownames(signifneg_results)[1:anchorlength] <- rep('0', anchorlength)
-
 for(i in 1:3){
-  X <- as.numeric(rownames(signifneg_results[,]))
-  Y <- signifneg_results[,i]
+  X <- as.numeric(rownames(signifneg_results_anchored[,]))
+  Y <- signifneg_results_anchored[,i]
   b <- exp(1)
   a <- -log((null/(1-null)), base = b)
   m <- try(nls(Y ~ b^(X*c-a)/(d + b^(X*c-a)), start = list(c = 0.03, d = 1)))
@@ -1116,14 +1119,9 @@ for(i in 1:3){
 # Note that b^(X*c)/(d + b^(X*c)) and b^(X*c+a)/(1 + b^(X*c+a)) are identical if
 # a and d are constrained s.t. Y = null at X = 0, but the latter is easier to fit.
 #========================================================================
-b <- exp(1)
-d <- (1-null)/null
-a <- log((null/(1-null)), base = b)
-c <- 0.02
-b^(X*c)/(d + b^(X*c))
-b^(X*c+a)/(1 + b^(X*c+a))
 
 kable(round(requirements_store2, 2))
+a
 ```
 
 ```{r}
@@ -1133,12 +1131,12 @@ source('../../FunctionFiles/glm_trends.R')
 load('../../RData/formulas.RData')
 load('../../RData/Barcode_threshold.RData')
 Result <- glm_barcode_results <- glm_trends(X = Barcode, 
-                                      distance = 'ProbIBD_24_tail',
-                                      formulas[[2]],
-                                      nrep = 1, 
-                                      years = NULL,
-                                      response_specified = FALSE,
-                                      speed = TRUE)
+                                            distance = 'ProbIBD_24_tail',
+                                            formulas[[2]],
+                                            nrep = 1, 
+                                            years = NULL,
+                                            response_specified = FALSE,
+                                            speed = TRUE)
 Result$`All ProbIBD_24_tail`$obs['geo_dist']
 ```
 # References

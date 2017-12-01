@@ -15,17 +15,16 @@ bibliography: /Users/aimeet/Documents/BroadLaptop/Bibtex/library.bib
 \renewcommand{\thetable}{\Alph{table}}
 \makeatother
 
-
 ```{r setup, include=FALSE}
 #==============================================================================
 # Default chunk options
 #==============================================================================
-knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, cache=TRUE, cache.comments = FALSE, fig.pos = 'H', fig.width = 6, dev = 'png', dpi = 300)
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE, include=FALSE, cache=TRUE, cache.comments = FALSE, fig.pos = 'H', fig.width = 6, dev = 'png', dpi = 700)
 ```
 
 Throughout this document, pairs of clinics are denoted by their abbreviated names (MLA for Maela, WPA for Wang Pha, MKK for Mae Kon Ken and MKT for Mawker Thai).
 
-We estimated clinic-averaged co-ancestries from WGS data assuming SNPs were both linked and unlinked. Linked analyses require a recombination file, specifying distances between SNPs. We used a uniform recombination rate equal to $7.4 \times 10^{-7}$ Morgans per base pair [@Miles2016], the same as that specified in hmmIBD [@Schaffner2017]. ChromoPainter essentially treats each unlinked SNP as an independent segment [@Lawson2012], increasing the number sharable segments when SNPs are considered unlinked (Fig \ref{fig: WGS}). Clinic-averaged co-ancestry estimates based on linked SNPs were more anisotropic than their unlinked counterparts (top versus bottom plot, Fig \ref{fig: WGS}). Anisotropy had little impact upon downstream analyses, however, which were otherwise very similar for linked and unlinked estimates (Fig \ref{fig:WGS trends}). 
+We estimated clinic-averaged co-ancestries from WGS data assuming SNPs were both linked and unlinked. Linked analyses require a recombination file specifying distances between SNPs. We used a uniform recombination rate equal to $7.4 \times 10^{-7}$ Morgans per base pair [@Miles2016], the same as that specified in hmmIBD [@Schaffner2017]. ChromoPainter essentially treats each unlinked SNP as an independent segment [@Lawson2012], increasing the number sharable segments when SNPs are considered unlinked (compare the ranges of the legends in Fig \ref{fig: WGS}). Clinic-averaged co-ancestry estimates based on linked SNPs were more anisotropic than their unlinked counterparts (top versus bottom plot, Fig \ref{fig: WGS}). Anisotropy had little impact upon downstream analyses, however, which were otherwise very similar for linked and unlinked estimates (Fig \ref{fig:WGS trends}). 
 
 ChromoPainter was designed for dense WGS data [@Lawson2012], with typically 100,000 or more SNPs across the human genome (personal communication). Nevertheless, we tried to estimate clinic-averaged co-ancestries using barcode data. Unsurprisingly, the markers were too far separated to support a linked analysis. We therefore present results from an unlinked analysis of barcode data only. 
 
@@ -85,11 +84,12 @@ for(i in 1:2){
   image(1:dim(tmpmat)[2],1:dim(tmpmat)[1],t(tmpmat), xaxt="n",yaxt="n",xlab="",ylab="", col = 'white')
   labelsatx = cumsum(sapply(sitelist, length)) - 0.5*sapply(sitelist, length)
   labelsaty = 178-cumsum(sapply(sitelist, length)) + 0.5*sapply(sitelist, length)
-  axis(side=3,at=labelsatx,labels=names(sitelist),cex.axis=1, las = 2)
-  axis(side=2,at=labelsaty,labels=names(sitelist),las=2,cex.axis=1) 
-  mtext(line = 1, text = c('Recipient', 'Donor'), side = c(2,3), adj = c(0.65, 0.35))
+  axis(side=3,at=labelsatx,labels=names(sitelist),cex.axis=1.5, las = 2)
+  axis(side=2,at=labelsaty,labels=names(sitelist),las=2,cex.axis=1.5) 
+  mtext(line = 1, text = c('Recipient', 'Donor'), side = c(2,3), adj = c(0.65, 0.35), cex = 1.5)
   mtext(line = 0.5, side = 1, text = type[i])
-  image.plot(1:dim(tmpmat)[2],1:dim(tmpmat)[1], t(tmpmat), xaxt = 'n', yaxt = 'n', add = TRUE)
+  image.plot(1:dim(tmpmat)[2],1:dim(tmpmat)[1], t(tmpmat), xaxt = 'n', yaxt = 'n', add = TRUE, 
+             col = rainbow(40, start = 0, end = 0.8))
 }
 ```
 
@@ -146,7 +146,7 @@ for(i in 1:2){
   #----------------------------------------------------------
   # plot northwards then southwards because red on blue != blue on red in R
   plot(y = Yvalues[northwardspls], x = Xvalues[northwardspls], xlim = c(0,100), 
-       xlab = 'Distance (km)', ylab = sprintf('Clinic-averaged co-ancestry estimates (%s)', type[i]), 
+       xlab = 'Inter-clinic distance (km)', ylab = sprintf('Clinic-averaged co-ancestry estimates (%s)', type[i]), 
        bty = 'n', pch = 16, cex = 2, cex.axis =1,  
        col = cols[northwardspls], las = 2)
   points(y = Yvalues[southwards], x = Xvalues[southwards], 
@@ -305,7 +305,7 @@ image.plot(1:dim(tmpmat)[2],1:dim(tmpmat)[1], t(tmpmat), xaxt = 'n',
            yaxt = 'n', add = TRUE, legend.width = 2)
 ```
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: clinic-avaeraged co-ancestry barcode trends}Trends and correlates of clinic-averaged co-ancestry estimates based on barcode data. Trend estimates and p-values were based on within and northwards co-ancestries only, since north and southward estimates are practically identical. P-values are two-tailed. $\\hat{p}$ denotes a Monte Carlo estimate based on 1000 permutations of the clinic-averaged co-ancestries. $p$ denotes an exact p-value based on $6! = 720$ possible permutations."), fig.width=7, fig.height=7}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: clinic-avaeraged co-ancestry barcode trends}Trends and correlates of clinic-averaged co-ancestry estimates based on barcode data. Trend estimates and p-values were based on within and northwards co-ancestries only, since north and southward estimates are practically identical. P-values are two-tailed: $\\hat{p}$ denotes a Monte Carlo estimate based on 1000 permutations of the clinic-averaged co-ancestries, $p$ denotes an exact p-value based on $6! = 720$ possible permutations."), fig.width=7, fig.height=7}
 #========================================================================   
 # Plot clinic-averaged co-ancestry ordered from North to South
 #========================================================================   
@@ -351,7 +351,7 @@ for(j in 1:length(pairwise_site_distance_all)){
 # reoder Y s.t. plot S->N before N->S 
 # (because red on blue versus blue on red gives diff col)
 plot(y = Yvalues[northwardspls], x = Xvalues[northwardspls], xlim = c(0,100),  
-     xlab = 'Distance (km)', ylab = 'Clinic-averaged co-ancestry estimates (unlinked)', 
+     xlab = 'Inter-clinic distance (km)', ylab = 'Clinic-averaged co-ancestry estimates (unlinked)', 
      bty = 'n', pch = 16, cex = 2, cex.axis =1, 
      col = cols[northwardspls])
 points(y = Yvalues[southwards], x = Xvalues[southwards], 
@@ -372,7 +372,7 @@ text(x = 35, y =  quantile(Yvalues, prob = 0.95),
 # reoder Y s.t. plot N->S before S->N 
 # (because red on blue versus blue on red gives diff col)
 plot(y = Yvalues[northwardspls[1:6]], x = Xvalues[northwardspls[1:6]], xlim = c(0,100), 
-     xlab = 'Distance (km)', ylab = 'Clinic-averaged co-ancestry estimates (unlinked)', 
+     xlab = 'Inter-clinic distance (km)', ylab = 'Clinic-averaged co-ancestry estimates (unlinked)', 
      bty = 'n', pch = 16, cex = 2, cex.axis =1,  
      col = cols[northwardspls[1:6]])
 points(y = Yvalues[southwards], x = Xvalues[southwards], 
@@ -446,7 +446,7 @@ any(names(chromP_vector) != Barcode$Sample_comparison[!nas])
 X <- Barcode$ProbIBD_93[!nas]
 ```
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: Pairwise barcode 01}Pairwise co-ancestry estimates and $\\hat{\\pi}_{\\text{IBD}}$ on zero-one axes."), fig.width=7, fig.height=9}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: Pairwise barcode 01}Pairwise co-ancestry estimates and $\\hat{\\pi}_{\\text{IBD}}$ based on barcode data plotted on zero-one axes."), fig.width=7, fig.height=9}
 par(mfrow = c(3,2), pty = 's', family = "serif", mar = c(5,5,2,2))
 for(site_comp in geo_order){
   ind <- Barcode$Site_comparison[!nas] == site_comp
@@ -460,7 +460,7 @@ for(site_comp in geo_order){
 }
 ```
 
-```{r, include = TRUE, fig.cap=paste("\\label{fig: Pairwise barcode}Pairwise co-ancestry estimates and $\\hat{\\pi}_{\\text{IBD}}$."), fig.width=7, fig.height=9}
+```{r, include = TRUE, fig.cap=paste("\\label{fig: Pairwise barcode}Pairwise co-ancestry estimates and $\\hat{\\pi}_{\\text{IBD}}$ based on barcode data."), fig.width=7, fig.height=9}
 par(mfrow = c(3,2), pty = 's', family = "serif", mar = c(5,5,2,2))
 for(site_comp in geo_order){
   ind <- Barcode$Site_comparison[!nas] == site_comp

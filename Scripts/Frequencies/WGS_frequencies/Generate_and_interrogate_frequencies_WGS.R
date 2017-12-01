@@ -19,9 +19,9 @@ load(file = '../../../RData/Barcode_frequencies_no_multiclonal.RData')
 # and compare to barcode
 #==================================================================================
 WGS_freq <- colMeans(SNPData, na.rm = TRUE)
-hist(sort(pmin(1-WGS_freq, WGS_freq)), col = 'grey', 
+hist(sort(pmin(1-WGS_freq, WGS_freq)), col = 'grey', breaks = 20,
      xlab = 'Allele frequency', ylab = 'Density', main = '', freq = FALSE) 
-hist(1-FreqResultsStore_counting$all, add = TRUE, freq = FALSE, 
+hist(1-FreqResultsStore_counting$all, add = TRUE, freq = FALSE, breaks = 20,
      col = adjustcolor('blue', alpha.f = 0.5)) # Plot as minor
 legend('topright', fill = c('grey', adjustcolor('blue', alpha.f = 0.5)), 
        bty = 'n', legend = c('WGS', 'Barcode'))
