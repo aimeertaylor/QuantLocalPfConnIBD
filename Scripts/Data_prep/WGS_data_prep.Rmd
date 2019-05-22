@@ -66,7 +66,7 @@ attach(geo_dist_info, warn.conflicts = FALSE)
 table(SequencingData$chrom) # 14 SNPs on chr 15 and 1 on chr 16
 # dim(SequencingData) # 42879 182 before removal of mitochondrial and apicoplast 
 
-SequencingData <- t(SequencingData[SequencingData$chrom < 14,]) 
+SequencingData <- t(SequencingData[SequencingData$chrom <= 14,]) 
 # dim(SequencingData) # 182 37170 after removal of  mitochondrial and apicoplast  
 
 # Replace missing (-1) with NA (checked SNPpos)
